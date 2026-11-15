@@ -7,7 +7,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 |---|---|
 | Pfeilwerk (Pfeile abbauen, 2D) | spielbar |
 | Pfeilwürfel (Pfeile auf Würfeln, Quadern und Blockgebilden, drehbar) | spielbar |
-| Kronenfeld (eine Krone pro Zeile/Spalte/Region) | spielbar |
+| Kronenfeld (1–3 Kronen pro Zeile/Spalte/Region, 7×7 bis 16×16) | spielbar |
 | Gleisbau – Einzelfeld (7×7 bis 10×10) und Großstrecke (2/4/6 verbundene Felder, am Ende Gesamtkarte) | spielbar |
 | Bilderrätsel (Nonogramm, 5×5 bis 15×15; eigene Motive + erzeugte Muster) | spielbar |
 | Schraubwerk (Schrauben umsetzen, Teile pendeln und fallen; Löser prüft jedes Level) | spielbar |
@@ -29,6 +29,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `sw.js` – Offline-Cache (bei Änderungen `VERSION` hochzählen)
 - `tools/test-*.js` – prüfen Level auf Lösbarkeit bzw. Eindeutigkeit (`node tools/test-crowns.js` usw.)
 - `tools/make-icons.js` – erzeugt die PNG-Symbole
+- `tools/make-crowns-bank.js` – erzeugt Kronenfeld-Rätsel vorab (`tools/crowns-bank/` → `js/games/crowns/bank.js`)
 
 ## Testzugang
 Mit `?debug` in der Adresse stellen Pfeilwürfel und Gleisbau `window.__game` zum automatischen Durchspielen bereit.

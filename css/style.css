@@ -161,8 +161,20 @@ button { font: inherit; color: inherit; }
 @keyframes fade { from { opacity: 0; } }
 
 /* ---------- Kronenfeld ---------- */
-.board.crowns { touch-action: none; }
-.crowns .bg { transition: filter .2s; }
+.board.crowns { touch-action: none; --cs: 62%; --cl: 84%; --cl2: 77%; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .board.crowns { --cs: 38%; --cl: 36%; --cl2: 29%; }
+}
+:root[data-theme="dark"] .board.crowns { --cs: 38%; --cl: 36%; --cl2: 29%; }
+.board-wrap:has(.board.crowns) { position: relative; }
+.crowns-fit {
+  position: absolute; right: 0; top: 0; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font-size: 13px; cursor: pointer;
+}
+.crowns-fit[hidden] { display: none; }
+.tool-btn.crowns-no-hint { opacity: 0.4; cursor: default; }
+.crowns .bg { fill: hsl(var(--h) var(--cs) var(--cl)); transition: filter .2s; }
+.crowns .bg.alt { fill: hsl(var(--h) var(--cs) var(--cl2)); }
 .crowns .grid-thin { stroke: var(--ink); stroke-opacity: .14; stroke-width: .25; fill: none; }
 .crowns .grid-thick { stroke: var(--ink); stroke-width: .6; stroke-linecap: square; fill: none; }
 .crowns .grid-frame { stroke: var(--ink); stroke-width: .9; fill: none; }
