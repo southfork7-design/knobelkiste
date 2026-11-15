@@ -6,7 +6,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Spiel | Status |
 |---|---|
 | Pfeilwerk (Pfeile abbauen, 2D) | spielbar |
-| Pfeilwürfel (Pfeile auf Würfeln/Quadern, drehbar) | spielbar |
+| Pfeilwürfel (Pfeile auf Würfeln, Quadern und Blockgebilden, drehbar) | spielbar |
 | Kronenfeld (eine Krone pro Zeile/Spalte/Region) | spielbar |
 | Gleisbau – Einzelfeld (7×7 bis 10×10) und Großstrecke (2/4/6 verbundene Felder, am Ende Gesamtkarte) | spielbar |
 | Bilderrätsel (Nonogramm, 5×5 bis 15×15; eigene Motive + erzeugte Muster) | spielbar |
@@ -34,7 +34,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 Mit `?debug` in der Adresse stellen Pfeilwürfel und Gleisbau `window.__game` zum automatischen Durchspielen bereit.
 
 ## Spiele einzeln testen
-Direkt-Links (lokal mit `python -m http.server 8123`):
+Direkt-Links (lokal mit `python tools/serve.py 8123`):
 
 | Spiel | Ordner | Link |
 |---|---|---|
@@ -51,7 +51,8 @@ Mit `&level=12` startet ein bestimmtes Level als Test – der gespeicherte Spiel
 Feinschliff je Spiel: nur im eigenen Ordner arbeiten; Änderungen an `js/ui/`, `css/style.css` (gemeinsamer Teil) oder `js/app.js` betreffen alle Spiele.
 
 ## Lokal starten
-`python -m http.server 8123`, dann http://localhost:8123 öffnen.
+`python tools/serve.py 8123`, dann http://localhost:8123 öffnen. Der Server sendet `Cache-Control: no-cache`,
+damit Chrome (auch auf dem Handy im selben WLAN) nach Änderungen keine alte Fassung zeigt.
 
 ## Aufs Android-Handy
 Die App muss über HTTPS erreichbar sein (z. B. GitHub Pages oder Netlify).

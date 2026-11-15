@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "knobelkiste", "runtimeExecutable": "python", "runtimeArgs": ["-m", "http.server", "8123"], "port": 8123 }
+    { "name": "knobelkiste", "runtimeExecutable": "python", "runtimeArgs": ["tools/serve.py", "8123"], "port": 8123, "autoPort": false }
   ]
 }
