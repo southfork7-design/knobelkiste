@@ -1,5 +1,5 @@
 // Kronenfeld: Spielfeld und Bedienung.
-// Tippen: leer → Kreuz → Krone → leer. Ziehen über Felder: Kreuze setzen
+// Tippen: Kreuz an/aus. Doppeltippen: Krone an/aus. Ziehen über Felder: Kreuze setzen
 // (oder löschen, wenn man auf einem Kreuz beginnt). Zwei Finger: zoomen und
 // verschieben, Mausrad am Computer.
 import { generateLevel } from './generator.js';
@@ -293,8 +293,24 @@ export function mountCrowns(root, { level, onWin, onExit }) {
     const d = drag;
     drag = null;
     if (!d || multi || over || e.type === 'pointercancel') { if (d) render(); return; }
-    if (!d.mode) setCells([[d.start, (state[d.start] + 1) % 3]]);
+    if (!d.mode) tap(d.start);
     else if (d.mode !== 'none') setCells(d.cells.map((i) => [i, d.mode]));
+  }
+  // Einfaches Tippen: Kreuz an/aus (eine Krone wird entfernt). Doppeltippen: Krone
+  // an/aus – der erste Tipp wird dabei zurückgenommen, damit kein Kreuz übrig bleibt.
+  let lastTap = null;
+  function tap(i) {
+    const now = performance.now();
+    if (lastTap && lastTap.i === i && now - lastTap.t < 350 && undoStack[undoStack.length - 1] === lastTap.step) {
+      undoStack.pop();
+      state[i] = lastTap.from;
+      lastTap = null;
+      setCells([[i, state[i] === CROWN ? EMPTY : CROWN]]);
+      return;
+    }
+    const from = state[i];
+    setCells([[i, from === EMPTY ? MARK : EMPTY]]);
+    lastTap = { i, t: now, from, step: undoStack[undoStack.length - 1] };
   }
   svg.addEventListener('pointerup', endPointer);
   svg.addEventListener('pointercancel', endPointer);
