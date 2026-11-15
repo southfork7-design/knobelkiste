@@ -26,8 +26,11 @@ Alles wurde bisher nur im Browser in Handygröße getestet – noch nicht auf de
 ## Offene Punkte / Ideen
 - Schwierigkeit von Schraubwerk und Farbräumer auf dem Handy beurteilen und ggf. nachjustieren.
 - Gleisbau: Rätsel sind eindeutig, aber nicht auf „ohne Raten lösbar“ geprüft (anders als Kronenfeld).
-- Kronenfeld: Bank für 14×14/15×15/16×16 ist noch klein (19/18/40 Rätsel, ×8 durch Drehen) – bei Bedarf mit
+- Kronenfeld: Bank für 14×14/15×15/16×16 hat 46/39/40 Rätsel (×8 durch Drehen) – bei Bedarf mit
   `node tools/make-crowns-bank.js <n> <k> <anzahl> <startSeed>` erweitern, dann `--build` und `node tools/test-crowns.js`.
+- Kronenfeld (Wunsch 15.11.): Kronen nicht mehr mit dem zweiten Tippen setzen – so kommt schnell versehentlich
+  eine falsche Krone hinein. Stattdessen: einfaches Tippen nur Kreuz an/aus, Krone NUR per Doppeltippen.
+- Idee für ein neues Spiel: im Stil von Minesweeper (nur die Mechanik), Felder etwa 10×10 bis 50×50.
 - Pfeilwürfel: große Level brauchen auf dem Handy evtl. 1–2 s zum Aufbauen – beobachten.
 
 ## So startet man lokal
