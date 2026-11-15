@@ -1,5 +1,5 @@
 // Offline-Cache. Bei jeder Änderung an der App VERSION hochzählen.
-const VERSION = 'knobelkiste-v9';
+const VERSION = 'knobelkiste-v12';
 const FILES = [
   './', './index.html', './css/style.css', './manifest.webmanifest',
   './js/app.js', './js/rng.js',
@@ -11,7 +11,7 @@ const FILES = [
   './js/games/screws/gen-client.js', './js/games/screws/worker.js',
   './js/games/colors/game.js', './js/games/colors/model.js', './js/games/colors/generator.js',
   './js/games/crowns/game.js', './js/games/crowns/generator.js',
-  './js/games/arrows/game.js', './js/games/arrows/generator.js',
+  './js/games/arrows/game.js', './js/games/arrows/generator.js', './js/games/arrows/shapes.js',
   './js/games/arrows3d/game.js', './js/games/arrows3d/generator.js',
   './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
 ];

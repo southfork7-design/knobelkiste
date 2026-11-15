@@ -1,4 +1,4 @@
-# Stand der Knobelkiste (14.11.2026)
+# Stand der Knobelkiste (15.11.2026)
 
 ## Fertig
 Alle sieben Spiele sind spielbar, mit endlosen, geprüften Leveln, Dunkelmodus, dezenten Geräuschen,
@@ -6,7 +6,7 @@ Tipp-Funktion und – wo sinnvoll – Rückgängig:
 
 | Spiel | Kurzbeschreibung | Getestet bis |
 |---|---|---|
-| Pfeilwerk | Pfeile in der richtigen Reihenfolge herausschieben, 3 Leben | Level 200 lösbar |
+| Pfeilwerk ✔ überarbeitet (15.11.) | Pfeile herausschieben, 3 Leben; ab 30×44 dicht gepackt (~97 %), jedes 3. Level eine Figur (12 eigene Umrisse, bis 80 breit), Zoomen/Verschieben, Tipp kostet ein Herz, angestoßene Pfeile fliegen nach Freiräumen von selbst | Level 200 lösbar |
 | Pfeilwürfel | Pfeile auf drehbaren Würfeln/Quadern, auch über Kanten | Level 120 lösbar |
 | Kronenfeld | eine Krone je Zeile/Spalte/Region, keine Nachbarn | Level 100 eindeutig, ohne Raten |
 | Gleisbau | Strecke nach Randzahlen; Einzelfeld 7×7–10×10 und Großstrecke (2/4/6 Felder → Gesamtkarte) | Level 60 / Strecke 12 eindeutig |
@@ -19,7 +19,7 @@ Alles wurde bisher nur im Browser in Handygröße getestet – noch nicht auf de
 ## Nächste Schritte
 1. **Feinschliff Spiel für Spiel** – je Spiel eine eigene Sitzung (Gruppe „Knobelkiste“ in der Seitenleiste).
    Ablauf: Spiel im Browser-Fenster öffnen, spielen, Änderungswünsche sagen, umsetzen, prüfen.
-   Vorgeschlagene Reihenfolge: Pfeilwerk → Pfeilwürfel → Kronenfeld → Gleisbau → Bilderrätsel → Schraubwerk → Farbräumer.
+   Vorgeschlagene Reihenfolge: ~~Pfeilwerk~~ (erledigt) → Pfeilwürfel → Kronenfeld → Gleisbau → Bilderrätsel → Schraubwerk → Farbräumer.
 2. **Auf das Android-Handy bringen** – Vorschlag: kostenlos über GitHub Pages veröffentlichen,
    dann in Chrome öffnen → „App installieren“.
 
