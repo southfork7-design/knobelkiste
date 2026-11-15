@@ -8,7 +8,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Pfeilwerk (Pfeile abbauen, 2D) | spielbar |
 | Pfeilwürfel (Pfeile auf Würfeln, Quadern und Blockgebilden, drehbar) | spielbar |
 | Kronenfeld (1–3 Kronen pro Zeile/Spalte/Region, 7×7 bis 16×16) | spielbar |
-| Gleisbau – Einzelfeld (7×7 bis 10×10) und Großstrecke (2/4/6 verbundene Felder, am Ende Gesamtkarte) | spielbar |
+| Gleisbau – Einzelfeld (8×8 bis 18×24, teils mit Felsen) und Großstrecke (2/4/6 verbundene Felder à 12–16, am Ende Gesamtkarte) | spielbar |
 | Bilderrätsel (Nonogramm, 5×5 bis 15×15; eigene Motive + erzeugte Muster) | spielbar |
 | Schraubwerk (Schrauben umsetzen, Teile pendeln und fallen; Löser prüft jedes Level) | spielbar |
 | Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren) | spielbar |
@@ -25,7 +25,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `js/games/<spiel>/game.js` – Darstellung und Bedienung
 - `js/games/screws/model.js` – Spielregeln/Geometrie von Schraubwerk (auch vom Löser genutzt)
 - `js/games/nonogram/motifs.js` – eigene Pixel-Motive (werden nur genutzt, wenn rein logisch lösbar)
-- `js/games/tracks/worker.js` + `gen-client.js` – Gleisbau-Rätsel werden im Hintergrund erzeugt (nächstes Feld/Level schon vorab)
+- `js/games/tracks/worker.js` + `gen-client.js` – Gleisbau-Rätsel werden im Hintergrund erzeugt (nächstes Feld/Level schon vorab, im Browser gespeichert); `generator.js` enthält den logischen Löser (ohne Raten)
 - `sw.js` – Offline-Cache (bei Änderungen `VERSION` hochzählen)
 - `tools/test-*.js` – prüfen Level auf Lösbarkeit bzw. Eindeutigkeit (`node tools/test-crowns.js` usw.)
 - `tools/make-icons.js` – erzeugt die PNG-Symbole

@@ -28,7 +28,7 @@ const GAMES = [
     id: 'tracks', name: 'Gleisbau', desc: 'Strecke nach Zahlen am Rand legen', icon: '╬', ready: true,
     meta: () => `Level ${state.tracks.level}`,
     modes: [
-      { id: 'tracks', name: 'Einzelfeld', desc: 'Ein Feld von 7×7 bis 10×10', meta: () => `Level ${state.tracks.level}` },
+      { id: 'tracks', name: 'Einzelfeld', desc: 'Felder von 8×8 bis 18×24', meta: () => `Level ${state.tracks.level}` },
       {
         id: 'tracksRoute', name: 'Großstrecke',
         desc: '2, 4 oder 6 Felder nacheinander lösen – am Ende entsteht eine große Karte',

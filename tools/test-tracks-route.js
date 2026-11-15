@@ -1,15 +1,15 @@
-// Prüft Großstrecken: jedes Feld eindeutig lösbar, Übergänge passen zusammen.
-// Aufruf: node tools/test-tracks-route.js
-import { generateRoute, solve, DR, DC } from '../js/games/tracks/generator.js';
+// Prüft Großstrecken: jedes Feld vom logischen Löser (ohne Raten) ganz lösbar,
+// Übergänge passen zusammen. Aufruf: node tools/test-tracks-route.js [bisStrecke]
+import { generateRoute, logicSolve, DR, DC } from '../js/games/tracks/generator.js';
 let bad = 0;
 const t0 = Date.now();
-for (let route = 1; route <= 12; route++) {
+const upTo = Number(process.argv[2] || 12);
+for (let route = 1; route <= upTo; route++) {
   const t = Date.now();
   const R = generateRoute(route);
   const n = R.n;
   R.panels.forEach((p, k) => {
-    const { solutions } = solve(n, p.rowC, p.colC, p.start, p.startOut, p.end, p.endOut, p.given, 2);
-    if (solutions.length !== 1) { bad++; console.log(`  Strecke ${route} Feld ${k + 1}: nicht eindeutig`); }
+    if (!logicSolve(p).solved) { bad++; console.log(`  Strecke ${route} Feld ${k + 1}: nicht ohne Raten lösbar`); }
     const q = R.panels[k + 1];
     if (q) {
       // Ausgang von p und Eingang von q müssen in Kartenkoordinaten aneinanderstoßen

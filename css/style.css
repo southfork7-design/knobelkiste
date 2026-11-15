@@ -192,21 +192,48 @@ button { font: inherit; color: inherit; }
 .sound-toggle { margin-top: 6px; }
 
 /* ---------- Gleisbau ---------- */
-.board.tracks { touch-action: none; }
+.board-wrap:has(.tracks-view) { position: relative; }
+.tracks-view { position: absolute; inset: 0; overflow: hidden; isolation: isolate; --wood: #b08d63; --rock: #cfc8bb; --stone: #a79f91; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tracks-view, :root:not([data-theme="light"]) .overlay { --wood: #7d6549; --rock: #3a3d44; --stone: #565a63; }
+}
+:root[data-theme="dark"] .tracks-view, :root[data-theme="dark"] .overlay { --wood: #7d6549; --rock: #3a3d44; --stone: #565a63; }
+.overlay { --wood: #b08d63; --rock: #cfc8bb; --stone: #a79f91; }
+.board.tracks { touch-action: none; display: block; }
+.tracks-clues { position: absolute; inset: 0; pointer-events: none; font-weight: 650; z-index: 2; }
+.tracks-clues span { position: absolute; left: 0; top: 0; line-height: 1; white-space: nowrap; transition: color .2s, opacity .2s; }
+.tracks-clues span.done { opacity: .35; }
+.tracks-clues span.over { color: var(--danger); }
+.tracks-band { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; background: var(--bg); opacity: 0; transition: opacity .15s; }
+.tracks-band.top { right: 0; box-shadow: 0 1px 0 var(--line); }
+.tracks-band.left { bottom: 0; box-shadow: 1px 0 0 var(--line); }
+.tracks-band.on { opacity: .94; }
+.tracks-fit {
+  position: absolute; right: 0; bottom: 0; z-index: 3; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font-size: 13px; cursor: pointer;
+}
+.tracks-fit[hidden] { display: none; }
+.tool-btn.tracks-no-hint { opacity: 0.4; cursor: default; }
 .tracks .field { fill: var(--surface); }
+.tracks .rock { fill: var(--rock); }
+.tracks .stone { fill: var(--stone); }
 .tracks .grid-line { stroke: var(--ink); stroke-opacity: .12; stroke-width: .25; fill: none; }
 .tracks .grid-frame { stroke: var(--ink); stroke-opacity: .55; stroke-width: .6; fill: none; }
-.tracks .clue { font-size: 5px; font-weight: 650; fill: var(--ink); text-anchor: middle; transition: fill .2s, opacity .2s; }
-.tracks .clue.done { opacity: .35; }
-.tracks .clue.over { fill: var(--danger); }
 .tracks .track path { fill: none; }
-.tracks .sleepers { stroke: var(--muted); stroke-opacity: .8; stroke-width: 4.8; stroke-dasharray: .8 1.7; }
-.tracks .rails { stroke: var(--rail); stroke-width: 3.4; stroke-linejoin: round; }
+.tracks .sleepers { stroke: var(--wood); stroke-width: 5.4; stroke-dasharray: 1 1.5; }
+.tracks .rails { stroke: var(--rail); stroke-width: 3.5; stroke-linejoin: round; }
 .tracks .rail-gap { stroke: var(--surface); stroke-width: 2.1; stroke-linejoin: round; }
 .tracks .given { --rail: var(--ink); }
 .tracks .player { --rail: var(--accent); }
-.tracks.solved .player { --rail: var(--ink); }
-.tracks .x-mark { stroke: var(--ink); stroke-opacity: .45; stroke-width: .6; stroke-linecap: round; fill: none; }
+.tracks .bad { --rail: var(--danger); }
+.tracks .cross { opacity: .8; }
+.tracks .cross .sleepers { stroke-dasharray: 1 1.2; }
+.tracks .done .sleepers { display: none; }
+.tracks .done { --rail: var(--ink); }
+.tracks .done path { stroke-dasharray: 1 1; stroke-dashoffset: 1; animation: tracksdone .5s ease-in-out forwards; }
+@keyframes tracksdone { to { stroke-dashoffset: 0; } }
+.tracks .ghost { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 1.2 1; opacity: .8; }
+.tracks .x-mark { stroke: var(--ink); stroke-opacity: .45; stroke-width: .7; stroke-linecap: round; fill: none; }
 .tracks .hint-cell { fill: var(--accent); animation: hintfade .9s ease-in-out infinite; }
 @keyframes hintfade { 0%, 100% { opacity: .08; } 50% { opacity: .3; } }
 
