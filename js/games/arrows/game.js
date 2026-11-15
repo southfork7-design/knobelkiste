@@ -71,7 +71,10 @@ export function mountArrows(root, { level, onWin, onExit }) {
     // Pfad bis weit über den Rand hinaus, damit der Pfeil hinausgleiten kann
     const [dx, dy] = DIRS[a.dir];
     const [hx, hy] = pts[pts.length - 1];
-    const far = (Math.max(w, h) + a.cells.length + 2) * C;
+    // Bahn nur so lang, bis der ganze Pfeil das Feld verlassen hat (plus etwas Rand)
+    const [hcx, hcy] = a.cells[a.cells.length - 1];
+    const toEdge = dx > 0 ? w - 1 - hcx : dx < 0 ? hcx : dy > 0 ? h - 1 - hcy : hcy;
+    const far = (toEdge + a.cells.length + 2) * C;
     const d = 'M' + pts.map((p) => p.join(' ')).join(' L') + ` L${hx + dx * far} ${hy + dy * far}`;
     const hit = el('path', { d: 'M' + pts.map((p) => p.join(' ')).join(' L'), class: 'hit' });
     const body = el('path', { d, class: 'body' });
@@ -204,12 +207,13 @@ export function mountArrows(root, { level, onWin, onExit }) {
     v.head.setAttribute('transform', `translate(${tip.x} ${tip.y}) rotate(${ang})`);
   }
 
-  function animate(v, from, to, ms, ease = (t) => t) {
+  function animate(v, from, to, ms, ease = (t) => t, onStep = null) {
     return new Promise((res) => {
       const t0 = performance.now();
       const step = (now) => {
         const t = Math.min(1, (now - t0) / ms);
         place(v, from + (to - from) * ease(t));
+        if (onStep) onStep(t);
         if (t < 1) requestAnimationFrame(step); else res();
       };
       requestAnimationFrame(step);
@@ -242,7 +246,9 @@ export function mountArrows(root, { level, onWin, onExit }) {
     v.g.classList.add('leaving');
     releaseWaiting();
     const travel = v.pathLen - v.bodyLen;
-    await animate(v, 0, travel, 380 + travel * 2.2, easeIn);
+    // zügig hinaus; zum Ende hin ausblenden
+    await animate(v, 0, travel, Math.min(160 + travel * 0.7, 520), easeIn,
+      (t) => { v.g.style.opacity = t < 0.7 ? '' : String(1 - (t - 0.7) / 0.3); });
     v.g.remove();
     busy.delete(v);
     shell.vibrate(10);
@@ -257,7 +263,7 @@ export function mountArrows(root, { level, onWin, onExit }) {
       if (u.removed || busy.has(u)) continue;
       if (blockDistance(u.a, occ, w, h) === null) {
         waiting.delete(u);
-        setTimeout(() => { if (!over && !u.removed && !busy.has(u)) launch(u); }, 160);
+        setTimeout(() => { if (!over && !u.removed && !busy.has(u)) launch(u); }, 90);
       }
     }
   }
@@ -271,7 +277,7 @@ export function mountArrows(root, { level, onWin, onExit }) {
     updateHud();
     shell.vibrate([30, 40, 30]);
     sound.bump();
-    await animate(v, 0, bump, 120 + bump * 4, easeOut);
+    await animate(v, 0, bump, Math.min(90 + bump * 2.5, 450), easeOut);
     await animate(v, bump, 0, 220, easeOut);
     v.g.classList.remove('blocked');
     busy.delete(v);
