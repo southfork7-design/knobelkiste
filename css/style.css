@@ -334,24 +334,40 @@ button { font: inherit; color: inherit; }
 .toast.show { opacity: 1; }
 
 /* ---------- Farbräumer ---------- */
-.board.colors { touch-action: manipulation; }
-.colors .fig { cursor: pointer; transition: opacity .2s; }
+.colors-wrap { position: relative; display: flex; flex-direction: column; width: 100%; height: 100%; --f6: #d9569b; }
+.colors-top { display: block; width: 100%; height: auto; flex: none; }
+.colors-view { position: relative; flex: 1; min-height: 0; overflow: hidden; isolation: isolate; }
+.board.colors { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
+.colors-fly { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 4; }
+.colors-fit {
+  position: absolute; right: 0; bottom: 0; z-index: 3; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font-size: 13px; cursor: pointer;
+}
+.colors-fit[hidden] { display: none; }
+.colors-view .toast { top: 6px; bottom: auto; z-index: 3; }
+.tool-btn.colors-no-hint { opacity: 0.4; cursor: default; }
+.colors .fig { cursor: pointer; transition: opacity .15s; }
 .colors .fig-body { stroke: rgba(0,0,0,.35); stroke-width: .045; }
 .colors .fig-shine { fill: #fff; opacity: .55; }
-.colors .fig.blocked { opacity: .42; cursor: default; }
+.colors .fig.blocked { opacity: .6; cursor: default; }
+.board.colors .fig:not(.blocked) .fig-body { stroke: var(--ink); stroke-opacity: .85; stroke-width: .06; }
 .colors .fig.hint { animation: pulse .9s ease-in-out infinite; }
 .colors .fig.wiggle { animation: blink .4s ease; }
 @keyframes blink { 30% { opacity: .15; } 60% { opacity: .8; } }
 .colors .tray { fill: var(--panel); stroke: var(--line); stroke-width: .4; }
 .colors .cell { fill: var(--ink); opacity: .07; }
-.colors .gate { fill: none; stroke: var(--ink); stroke-opacity: .45; stroke-width: .5; stroke-dasharray: 1.4 1; }
-.colors .gate-badge { stroke: var(--surface); stroke-width: .6; }
-.colors .gate-count { font-size: 3.2px; font-weight: 700; fill: #fff; text-anchor: middle; }
-.colors .cont-box { fill: var(--surface); stroke-width: 1; }
+.colors .gate { fill: none; stroke: var(--ink); stroke-opacity: .5; stroke-width: .5; stroke-dasharray: 1.4 1; }
+.colors .gate-badge { stroke: var(--surface); stroke-width: .5; }
+.colors .gate-count { font-size: 3px; font-weight: 700; fill: #fff; text-anchor: middle; pointer-events: none; }
+.colors .cont { transform-box: view-box; }
+.colors .cont-box { fill: var(--surface); stroke-width: .8; }
 .colors .cont-tint { opacity: .16; pointer-events: none; }
-.colors .cont-back { opacity: .8; stroke: rgba(0,0,0,.2); stroke-width: .3; }
-.colors .cont-empty { fill: none; stroke: var(--line); stroke-width: .6; stroke-dasharray: 2 1.5; }
-.colors .cont-more { font-size: 3px; fill: var(--muted); text-anchor: end; }
-.colors .slot { fill: none; stroke-width: .5; stroke-dasharray: 1 .8; opacity: .8; }
+.colors .cont-back { opacity: .85; stroke: rgba(0,0,0,.2); stroke-width: .3; }
+.colors .cont-empty { fill: none; stroke: var(--line); stroke-width: .5; stroke-dasharray: 2 1.5; }
+.colors .cont-more { font-size: 2.8px; fill: var(--muted); text-anchor: middle; }
+.colors .slot { fill: none; stroke-width: .45; stroke-dasharray: .9 .7; opacity: .8; }
 .colors .buf-slot { fill: var(--surface); stroke: var(--line); stroke-width: .5; }
-.colors .buf-label { font-size: 3px; fill: var(--muted); }
+.colors .buf-slot.full { stroke: var(--danger); stroke-opacity: .6; }
+.colors .buf-label { font-size: 3.2px; fill: var(--muted); }
+.colors-fly .fig-body { stroke: rgba(0,0,0,.35); stroke-width: .045; }
+.colors-fly .fig-shine { fill: #fff; opacity: .55; }

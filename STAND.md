@@ -13,19 +13,19 @@ Tipp-Funktion und – wo sinnvoll – Rückgängig:
 | Bilderrätsel ✔ überarbeitet (16.11.) | Nonogramm 10×10 bis 30×40 (hochkant), anfangs 4 eigene Motive, sonst feine, meist gespiegelte Muster (schwierigstes von 6); Zoomen/Verschieben, Randzahlen bleiben stehen; 3 Herzen: Zeile/Spalte, die nicht mehr aufgehen kann (rot), und Tipp kosten je ein Herz; Wischen = Vorschau bis zum Loslassen; fertige Zeilen/Spalten bekommen automatisch Kreuze | Level 80 eindeutig, ohne Raten |
 | Farbbilder (neu, 16.11.) | Farb-Nonogramm mit 2–4 Farben (gleiche Farbe braucht Lücke, verschiedene dürfen sich berühren), 15×15 bis 30×35, Bedienung wie Bilderrätsel, je Farbe ein Werkzeug | Level 60 eindeutig, ohne Raten; Farb-Löser gegen vollständige Suche geprüft |
 | Schraubwerk ✔ überarbeitet (16.11.) | Schrauben umsetzen; Bretter 6×8 bis 12×17 Löcher, 16–82 Teile dicht in zwei Lagen, knappe freie Löcher; Physik: Schrauben ragen als Stifte durch die Lagen, pendelnde Teile lehnen sich an, fallende rutschen ab oder bleiben liegen (Starrkörper-Simulation); Zoomen/Verschieben; 3 Herzen: Tipp und Sackgasse (kein Zug mehr, wird zurückgenommen) kosten je ein Herz; Stand im Level wird gespeichert | Level 60 lösbar (Löser spielt nach) |
-| Farbräumer | Figuren in Farb-Behälter (Stapel), Ablage, Tore | Level 30 lösbar |
+| Farbräumer ✔ überarbeitet (16.11.) | Figuren in Farb-Behälter (3–5 Stapel), Ablage, Tore; Bretter 7×9 bis 14×20, voll gefüllt (63–300 Figuren), 4–7 Farben; Level entstehen entlang einer Lösung; bei zwei offenen Behältern gleicher Farbe geht die Figur in den volleren; Zoomen/Verschieben, Behälter/Ablage bleiben oben fest; 3 Herzen: Tipp und Sackgasse (kein Zug mehr, wird zurückgenommen) kosten je ein Herz; Stand im Level wird gespeichert | Level 80 lösbar (Lösung nachgespielt) |
 
 Alles wurde bisher nur im Browser in Handygröße getestet – noch nicht auf dem echten Handy.
 
 ## Nächste Schritte
 1. **Feinschliff Spiel für Spiel** – je Spiel eine eigene Sitzung (Gruppe „Knobelkiste“ in der Seitenleiste).
    Ablauf: Spiel im Browser-Fenster öffnen, spielen, Änderungswünsche sagen, umsetzen, prüfen.
-   Vorgeschlagene Reihenfolge: ~~Pfeilwerk~~ → ~~Pfeilwürfel~~ → ~~Kronenfeld~~ → ~~Gleisbau~~ → ~~Bilderrätsel/Farbbilder~~ → ~~Schraubwerk~~ (erledigt) → Farbräumer.
+   Vorgeschlagene Reihenfolge: ~~Pfeilwerk~~ → ~~Pfeilwürfel~~ → ~~Kronenfeld~~ → ~~Gleisbau~~ → ~~Bilderrätsel/Farbbilder~~ → ~~Schraubwerk~~ → ~~Farbräumer~~ (alle erledigt).
 2. **Auf das Android-Handy bringen** – Vorschlag: kostenlos über GitHub Pages veröffentlichen,
    dann in Chrome öffnen → „App installieren“.
 
 ## Offene Punkte / Ideen
-- Schwierigkeit von Farbräumer auf dem Handy beurteilen und ggf. nachjustieren.
+- Farbräumer: Schwierigkeit auf dem Handy beobachten (Stellschrauben in `levelParams`: Stapel, Ablage, Farben, `target`). Tipp-Löser findet in <1 % der Lagen nichts („Kein Tipp gefunden“, kostet kein Herz). Stand: `knobelkiste-colors-stand`.
 - Schraubwerk: große Level brauchen am PC bis ~5 s zum Erzeugen (Handy geschätzt bis 15 s); läuft im Hintergrund vorab und wird im Browser gespeichert (`knobelkiste-screws-cache`). Große Level haben 130–250 Züge – auf dem Handy beobachten, ob das zu lang ist.
 - Gleisbau: 18×24 braucht am PC 5–7 s zum Erzeugen (Handy geschätzt 15–20 s); läuft im Hintergrund vorab und wird im Browser gespeichert. Falls es stört: Bank wie bei Kronenfeld.
 - Kronenfeld: Bank für 14×14/15×15/16×16 hat 46/39/40 Rätsel (×8 durch Drehen) – bei Bedarf mit

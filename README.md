@@ -12,7 +12,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Bilderrätsel (Nonogramm, 10×10 bis 30×40; anfangs eigene Motive, dann erzeugte Muster) | spielbar |
 | Farbbilder (Nonogramm mit 2–4 Farben, 15×15 bis 30×35) | spielbar |
 | Schraubwerk (Schrauben umsetzen, 6×8 bis 12×17 Löcher; Teile pendeln, stoßen an Schrauben, rutschen ab oder fallen; Löser prüft jedes Level) | spielbar |
-| Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren) | spielbar |
+| Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren; 7×9 bis 14×20, bis ~300 Figuren) | spielbar |
 
 ## Grundsätze (für alle Spiele)
 - Keine Werbung, keine Musik, keine motivierenden Ausrufe oder Lobtexte. Texte bleiben nüchtern („Gelöst“, Zeit, Fehler).
@@ -28,6 +28,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `js/games/nonogram/motifs.js` – eigene Pixel-Motive (werden nur genutzt, wenn rein logisch lösbar)
 - `js/games/nonogram/color.js` – Farbbilder: Farb-Zeilenlöser und Generator (`node tools/test-nonogram-color.js`)
 - `js/games/tracks/worker.js` + `gen-client.js` – Gleisbau-Rätsel werden im Hintergrund erzeugt (nächstes Feld/Level schon vorab, im Browser gespeichert); `generator.js` enthält den logischen Löser (ohne Raten)
+- `js/games/colors/model.js` – Regeln und Tipp-Löser von Farbräumer; `generator.js` baut Level entlang einer Lösung (`node tools/test-colors.js 80`), `worker.js` sucht Tipps im Hintergrund
 - `sw.js` – Offline-Cache (bei Änderungen `VERSION` hochzählen)
 - `tools/test-*.js` – prüfen Level auf Lösbarkeit bzw. Eindeutigkeit (`node tools/test-crowns.js` usw.)
 - `tools/make-icons.js` – erzeugt die PNG-Symbole
