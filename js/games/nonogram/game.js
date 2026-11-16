@@ -8,6 +8,8 @@
 // 3 Herzen: Eine Zeile/Spalte, die sichtbar nicht mehr zu ihren Zahlen passen
 // kann, kostet ein Herz; ebenso jeder Tipp (nicht mit dem letzten Herz).
 // Ist eine Zeile/Spalte fertig, bekommen ihre übrigen Felder von selbst ein Kreuz.
+// Der Stand im laufenden Level wird im Browser gespeichert (Neuladen, Menü);
+// „Neu“, „Nochmal“, Lösen und das nächste Level verwerfen ihn.
 // Farbbilder (color: true): mehrere Farben, je Farbe ein Werkzeug; zwischen
 // gleichfarbigen Blöcken liegt eine Lücke, verschiedenfarbige dürfen sich berühren.
 import { generateLevel } from './generator.js';
@@ -41,10 +43,11 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
   const st = new Uint8Array(N);
   const undoStack = [];
   let lives = LIVES, hints = 0, mistakes = 0, over = false, tool = 1;
-  const t0 = performance.now();
+  let t0 = performance.now();
 
   const shell = createShell(root, {
-    name: color ? 'Farbbilder' : 'Bilderrätsel', level, lives: LIVES, onExit, onHint: () => hint(), onUndo: () => undo(),
+    name: color ? 'Farbbilder' : 'Bilderrätsel', level, lives: LIVES, onHint: () => hint(), onUndo: () => undo(),
+    onExit: (how) => { if (how !== 'menu') clearSave(); onExit(how); },
   });
   const hintBtn = root.querySelector('[data-act="hint"]');
   shell.board.classList.add('nono-wrap');
@@ -340,12 +343,14 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
       // sichtbarer Regelverstoß: kostet ein Herz
       lives--; mistakes++;
       updateHud();
+      saveState();
       sound.bump();
       shell.vibrate([30, 40, 30]);
       if (lives <= 0) lose();
       return;
     }
     if (d.action === 'set' && d.v !== CROSS) sound.click(); else sound.tick();
+    saveState();
     checkWin();
   }
   svg.addEventListener('pointerup', endPointer);
@@ -365,6 +370,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
     st.set(undoStack.pop());
     clearHint();
     render();
+    saveState();
     sound.tick();
   }
 
@@ -398,6 +404,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
     if (i < 0) return;
     lives--; hints++;
     updateHud();
+    saveState();
     hinted = i;
     const x = (i % K) * C, y = Math.floor(i / K) * C;
     hintRect.setAttribute('x', x);
@@ -423,6 +430,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
   function checkWin() {
     for (let i = 0; i < N; i++) if (colorOf(st[i]) !== pixels[i]) return;
     over = true;
+    clearSave();
     clearInterval(timer);
     clearHint();
     for (let i = 0; i < N; i++) if (st[i] === CROSS) st[i] = EMPTY;
@@ -440,6 +448,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
   }
   function lose() {
     over = true;
+    clearSave();
     clearInterval(timer);
     clearHint();
     shell.lose(color ? RULES_COLOR : RULES);
@@ -453,6 +462,35 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
       at(i) { const r = view.getBoundingClientRect(); return [r.left + ox + ((i % K) + 0.5) * s, r.top + oy + (Math.floor(i / K) + 0.5) * s]; },
     };
   }
+
+  // ---------- Spielstand im Level ----------
+  const SAVE_KEY = `knobelkiste-${color ? 'nonogramColor' : 'nonogram'}-stand`;
+  const hex = (a) => Array.from(a, (v) => v.toString(16)).join('');
+  const unhex = (t) => Uint8Array.from(t, (ch) => parseInt(ch, 16));
+  function saveState() {
+    if (over) return;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        level, R, K, st: hex(st), lives, hints, mistakes, time: performance.now() - t0,
+        undo: undoStack.slice(-40).map(hex),
+      }));
+    } catch {}
+  }
+  function clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch {} }
+  try {
+    const sv = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (sv && sv.level === level && sv.R === R && sv.K === K && sv.st.length === N && sv.lives > 0) {
+      st.set(unhex(sv.st));
+      lives = sv.lives; hints = sv.hints; mistakes = sv.mistakes;
+      t0 = performance.now() - sv.time;
+      undoStack.push(...sv.undo.filter((u) => u.length === N).map(unhex));
+      shell.setCounter(timeText(sv.time).replace(' min', ''));
+    }
+  } catch {}
+  // beim Verlassen der Seite bzw. Wechsel in eine andere App die Zeit mitspeichern
+  const onHide = () => { if (svg.isConnected && document.visibilityState === 'hidden') saveState(); };
+  document.addEventListener('visibilitychange', onHide);
+  window.addEventListener('pagehide', () => { if (svg.isConnected) saveState(); });
 
   measure();
   fit(false);

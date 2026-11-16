@@ -32,7 +32,7 @@ Alles wurde bisher nur im Browser in Handygröße getestet – noch nicht auf de
 - Idee für ein neues Spiel: im Stil von Minesweeper (nur die Mechanik), Felder etwa 10×10 bis 50×50.
 - Pfeilwürfel: große Level brauchen auf dem Handy evtl. 1–2 s zum Aufbauen – beobachten.
 - Farbbilder sind logisch eher leicht (6–8 Löserrunden), Schwierigkeit kommt über die Feldgröße; Bilderrätsel-Level brauchen am PC bis ~0,4 s (Handy ~1 s) – beobachten.
-- Bilderrätsel: Spielstand innerhalb eines Levels wird nicht gespeichert (Neuladen beginnt das Level neu) – bei großen Feldern evtl. nachrüsten.
+- Bilderrätsel/Farbbilder: Stand im laufenden Level wird gespeichert (`knobelkiste-nonogram-stand` bzw. `-nonogramColor-stand`); Neu/Nochmal/Lösen verwerfen ihn.
 
 ## So startet man lokal
 Im Projektordner `python tools/serve.py 8123` (Testserver ohne Zwischenspeicher, damit das Handy Änderungen sofort sieht), dann http://localhost:8123 bzw. vom Handy im WLAN http://192.168.0.227:8123 – Direkt-Links je Spiel siehe README.
