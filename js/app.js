@@ -6,6 +6,7 @@ import { mountTracks, mountTrackRoute } from './games/tracks/game.js';
 import { mountNonogram, mountNonogramColor } from './games/nonogram/game.js';
 import { mountScrews } from './games/screws/game.js';
 import { mountColors } from './games/colors/game.js';
+import { mountTraps } from './games/traps/game.js';
 import { routeParams } from './games/tracks/generator.js';
 import { sound } from './ui/sound.js';
 
@@ -18,7 +19,7 @@ function save() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch {}
 }
 const state = load();
-for (const id of ['arrows', 'arrows3d', 'crowns', 'tracks', 'nonogram', 'nonogramColor', 'screws', 'colors']) state[id] = state[id] || { level: 1, solved: 0 };
+for (const id of ['arrows', 'arrows3d', 'crowns', 'tracks', 'nonogram', 'nonogramColor', 'screws', 'colors', 'traps']) state[id] = state[id] || { level: 1, solved: 0 };
 state.tracksRoute = state.tracksRoute || { route: 1, done: 0, panels: [] };
 
 const GAMES = [
@@ -44,6 +45,7 @@ const GAMES = [
   { id: 'nonogramColor', name: 'Farbbilder', desc: 'Farbige Zahlen am Rand ergeben ein buntes Muster', icon: '▩', ready: true },
   { id: 'screws', name: 'Schraubwerk', desc: 'Schrauben lösen, Teile fallen lassen', icon: '⚙', ready: true },
   { id: 'colors', name: 'Farbräumer', desc: 'Figuren nach Farben vom Brett holen', icon: '●', ready: true },
+  { id: 'traps', name: 'Fallenfeld', desc: 'Fallen finden, Zahlen verraten die Nachbarn', icon: '✦', ready: true },
 ];
 
 const app = document.getElementById('app');
@@ -96,7 +98,7 @@ function showModes(g) {
   app.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => startGame(b.dataset.mode)));
 }
 
-const MOUNT = { arrows: mountArrows, arrows3d: mountArrows3d, crowns: mountCrowns, tracks: mountTracks, nonogram: mountNonogram, nonogramColor: mountNonogramColor, screws: mountScrews, colors: mountColors };
+const MOUNT = { arrows: mountArrows, arrows3d: mountArrows3d, crowns: mountCrowns, tracks: mountTracks, nonogram: mountNonogram, nonogramColor: mountNonogramColor, screws: mountScrews, colors: mountColors, traps: mountTraps };
 
 // Direkt-Link zum Testen: ?spiel=<id>&level=<n>
 // Mit ?level wird ein Testlevel gespielt, ohne den gespeicherten Spielstand zu ändern.

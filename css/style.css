@@ -371,3 +371,34 @@ button { font: inherit; color: inherit; }
 .colors .buf-label { font-size: 3.2px; fill: var(--muted); }
 .colors-fly .fig-body { stroke: rgba(0,0,0,.35); stroke-width: .045; }
 .colors-fly .fig-shine { fill: #fff; opacity: .55; }
+
+/* ---------- Fallenfeld ---------- */
+.traps-view {
+  position: absolute; inset: 0; overflow: hidden;
+  --tc-cover: #cfc6b4; --tc-cover-hi: #ddd6c7; --tc-open: #fffdf8; --tc-line: #b9b09d;
+  --tc-flag: #d0452f; --tc-trap: #3d3f46; --tc-boom: #f2c2b8;
+  --tn1: #35507f; --tn2: #3f7a2f; --tn3: #b0442c; --tn4: #6b3f8f; --tn5: #8a5a14; --tn6: #2f6f6a; --tn7: #23262d; --tn8: #7a7d85;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .traps-view {
+    --tc-cover: #444a56; --tc-cover-hi: #535a67; --tc-open: #1c1f25; --tc-line: #2b2f37;
+    --tc-flag: #ef7a6e; --tc-trap: #d9d7d0; --tc-boom: #6a2e28;
+    --tn1: #8aa8e0; --tn2: #9ccc7e; --tn3: #ef8a6e; --tn4: #c99ae0; --tn5: #e2b45a; --tn6: #6cc0b8; --tn7: #eceae4; --tn8: #9a9ca3;
+  }
+}
+:root[data-theme="dark"] .traps-view {
+  --tc-cover: #444a56; --tc-cover-hi: #535a67; --tc-open: #1c1f25; --tc-line: #2b2f37;
+  --tc-flag: #ef7a6e; --tc-trap: #d9d7d0; --tc-boom: #6a2e28;
+  --tn1: #8aa8e0; --tn2: #9ccc7e; --tn3: #ef8a6e; --tn4: #c99ae0; --tn5: #e2b45a; --tn6: #6cc0b8; --tn7: #eceae4; --tn8: #9a9ca3;
+}
+.board.traps { position: absolute; left: 0; top: 0; display: block; touch-action: none; }
+.traps-fit {
+  position: absolute; right: 0; bottom: 0; z-index: 3; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font-size: 13px; cursor: pointer;
+}
+.traps-fit[hidden] { display: none; }
+.traps-view .toast { top: 6px; bottom: auto; z-index: 3; }
+.traps-hint { position: absolute; z-index: 2; pointer-events: none; box-sizing: border-box;
+  border: 3px solid var(--accent); border-radius: 4px; animation: pulse .9s ease-in-out infinite; }
+.traps-hint[hidden] { display: none; }
+.tool-btn.traps-no-hint { opacity: 0.4; cursor: default; }
