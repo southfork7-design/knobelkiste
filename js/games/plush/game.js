@@ -1,7 +1,7 @@
 // Kuschelfracht: Darstellung, Animation und Bedienung.
 // Eine Form mit dem Finger ziehen → sie folgt Feld für Feld und bleibt an Hindernissen stehen.
-// Grenzt sie an gleichfarbige Plüschtiere, springen diese hinein (ein Tier je Quadrat);
-// eine volle Form verschwindet. Räume am Rand geben ihr vorderstes Tier an eine gleichfarbige
+// Fährt sie auf das Feld eines gleichfarbigen Plüschtiers, fällt es hinein (ein Tier je Quadrat);
+// andersfarbige Tiere versperren den Weg. Eine volle Form verschwindet. Räume am Rand geben ihr vorderstes Tier an eine gleichfarbige
 // Form ab, die auf dem Türfeld steht. Graue Formen sind Hindernisse; Formen mit ↔/↕ lassen sich
 // nur waagerecht/senkrecht schieben; Formen mit Schloss öffnen sich, wenn genug andere verschwunden sind.
 // Zwei Finger: zoomen und verschieben (Mausrad am Computer); ist hineingezoomt, verschiebt ein Finger
@@ -9,7 +9,7 @@
 // 3 Herzen: Tipp (nicht mit dem letzten) und Sackgasse (sicher erkannt, wird zurückgenommen) kosten je ein Herz.
 // Der Stand im laufenden Level wird im Browser gespeichert; „Neu“, „Nochmal“ und das nächste Level verwerfen ihn.
 import {
-  initialState, cloneState, occupancy, step, stepTarget, applyMove, isWon, plushLeft, deadEnd,
+  initialState, cloneState, occupancy, step, stepTarget, size, applyMove, isWon, plushLeft, deadEnd,
   isLocked, stateKey, packState, unpackState, solve,
 } from './model.js';
 import { generateLevel } from './generator.js';
@@ -20,8 +20,8 @@ const S = 10;                 // Feldgröße (SVG-Einheiten)
 const LIVES = 3;
 const MAX_UNIT = 60;          // höchstens so viele Pixel je Feld beim Zoomen
 const SAVE_KEY = 'knobelkiste-plush-stand';
-const RULES = 'Formen lassen sich Feld für Feld ziehen. Gleichfarbige Plüschtiere springen hinein, sobald sie die Form berühren – je Quadrat eins. Eine Sackgasse entsteht, wenn eine Form ihre Tiere nie mehr erreichen kann.';
-const FLY_MS = 230, FADE_MS = 200;
+const RULES = 'Formen lassen sich Feld für Feld ziehen. Fährt eine Form auf ein gleichfarbiges Plüschtier, fällt es hinein – je Quadrat eins. Andersfarbige Tiere versperren den Weg. Eine Sackgasse entsteht, wenn eine Form ihre Tiere nie mehr erreichen kann.';
+const FLY_MS = 190, FADE_MS = 200;
 const SVGNS = 'http://www.w3.org/2000/svg';
 const el = (tag, attrs = {}) => {
   const n = document.createElementNS(SVGNS, tag);
@@ -134,7 +134,7 @@ export function mountPlush(root, { level, onWin, onExit }) {
 
   // ---------- Formen zeichnen ----------
   // Je Form eine Gruppe: Körper (Umriss + Fläche), je Quadrat ein Sitzplatz und ein Tier.
-  const vis = new Map();   // p -> { x, y, tx, ty, g, slots, shown, pending, ghost, fade }
+  const vis = new Map();   // p -> { x, y, tx, ty, g, slots, filled, taken, pending, ghost, fade }
   function shapeRects(cells, inset) {
     const set = new Set(cells.map(([x, y]) => `${x},${y}`));
     const has = (x, y) => set.has(`${x},${y}`);
@@ -195,7 +195,7 @@ export function mountPlush(root, { level, onWin, onExit }) {
     return { g, slots };
   }
   function showFill(v) {
-    v.slots.forEach((sl, i) => { sl.fig.style.display = i < v.shown ? '' : 'none'; sl.seat.style.display = i < v.shown ? 'none' : ''; });
+    v.slots.forEach((sl, i) => { sl.fig.style.display = v.filled[i] ? '' : 'none'; sl.seat.style.display = v.filled[i] ? 'none' : ''; });
   }
   function placePiece(v) { v.g.setAttribute('transform', `translate(${v.x} ${v.y})${v.fade ? ` translate(${v.fcx} ${v.fcy}) scale(${1 + 0.15 * v.fade}) translate(${-v.fcx} ${-v.fcy})` : ''}`); }
 
@@ -207,7 +207,8 @@ export function mountPlush(root, { level, onWin, onExit }) {
     for (let p = 0; p < L.pieces.length; p++) {
       if (s.pos[p] < 0) continue;
       const { g, slots } = buildPiece(p);
-      const v = { x: ax(s.pos[p]), y: ay(s.pos[p]), tx: ax(s.pos[p]), ty: ay(s.pos[p]), g, slots, shown: s.fill[p], pending: 0, ghost: false, fade: 0 };
+      const n = s.fill[p], k = size(L, p);
+      const v = { x: ax(s.pos[p]), y: ay(s.pos[p]), tx: ax(s.pos[p]), ty: ay(s.pos[p]), g, slots, filled: Array.from({ length: k }, (_, i) => i < n), taken: Array.from({ length: k }, (_, i) => i < n), pending: 0, ghost: false, fade: 0 };
       vis.set(p, v);
       showFill(v);
       placePiece(v);
@@ -314,12 +315,12 @@ export function mountPlush(root, { level, onWin, onExit }) {
       const e = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
       const c = L.pieces[f.p].cells[f.slot];
       const x1 = (v ? v.x : 0) + c[0] * S + S / 2, y1 = (v ? v.y : 0) + c[1] * S + S / 2;
-      const lift = Math.min(6, Math.hypot(x1 - f.x0, y1 - f.y0) * 0.5);
+      const lift = Math.max(1.6, Math.min(6, Math.hypot(x1 - f.x0, y1 - f.y0) * 0.5));
       placed(f.g, f.x0 + (x1 - f.x0) * e, f.y0 + (y1 - f.y0) * e - Math.sin(Math.PI * t) * lift, f.k0 + (S * 0.62 - f.k0) * e);
       if (t >= 1) {
         f.g.remove();
         flights.splice(i, 1);
-        if (v) { v.pending--; v.shown++; showFill(v); }
+        if (v) { v.pending--; v.filled[f.slot] = true; showFill(v); }
         sound.click();
       } else active = true;
     }
@@ -345,8 +346,15 @@ export function mountPlush(root, { level, onWin, onExit }) {
         const g = placed(plushFig(L.pieces[e.p].color), x0, y0, k0);
         fx.appendChild(g);
         const v = vis.get(e.p);
-        if (v) v.pending++;
-        flights.push({ g, x0, y0, k0, p: e.p, slot: e.slot, t0: performance.now() });
+        // Das Tier fällt in das Quadrat, das darüber steht (sonst in ein freies)
+        let slot = e.k;
+        if (v) {
+          if (v.taken[slot]) slot = v.taken.indexOf(false);
+          if (slot < 0) slot = e.k;
+          v.taken[slot] = true;
+          v.pending++;
+        }
+        flights.push({ g, x0, y0, k0, p: e.p, slot, t0: performance.now() });
         plushChanged = true;
       } else if (e.t === 'gone') {
         const v = vis.get(e.p);
@@ -359,7 +367,8 @@ export function mountPlush(root, { level, onWin, onExit }) {
       } else if (e.t === 'open') {
         const old = vis.get(e.p);
         const { g, slots } = buildPiece(e.p);
-        const v = { x: ax(s.pos[e.p]), y: ay(s.pos[e.p]), tx: ax(s.pos[e.p]), ty: ay(s.pos[e.p]), g, slots, shown: 0, pending: 0, ghost: false, fade: 0 };
+        const k = size(L, e.p);
+        const v = { x: ax(s.pos[e.p]), y: ay(s.pos[e.p]), tx: ax(s.pos[e.p]), ty: ay(s.pos[e.p]), g, slots, filled: new Array(k).fill(false), taken: new Array(k).fill(false), pending: 0, ghost: false, fade: 0 };
         if (old) old.g.replaceWith(g); else piecesG.appendChild(g);
         vis.set(e.p, v);
         showFill(v);
@@ -498,7 +507,7 @@ export function mountPlush(root, { level, onWin, onExit }) {
       let moved = false;
       for (const d of order) {
         if (d < 0) continue;
-        if (stepTarget(L, occ, p, a, d) < 0) continue;
+        if (stepTarget(L, occ, p, a, d, size(L, p) - s.fill[p]) < 0) continue;
         if (!drag.before) { drag.before = cloneState(s); hintMove = null; renderHint(); }
         const ev = [];
         step(L, s, occ, p, d, ev);
@@ -651,14 +660,16 @@ export function mountPlush(root, { level, onWin, onExit }) {
       doMove(m) {
         if (busy || over || s.pos[m.p] !== m.path[0]) return false;
         const before = cloneState(s);
+        let moved = false;
         for (let i = 1; i < m.path.length && s.pos[m.p] >= 0; i++) {
           const d = [1, -1, L.cols, -L.cols].indexOf(m.path[i] - m.path[i - 1]);
           const ev = [];
           if (!step(L, s, occ, m.p, d, ev)) break;
+          moved = true;
           play(ev);
         }
-        finishMove(before);
-        return true;
+        if (moved) finishMove(before);
+        return moved;
       },
       at(cell) { const r = view.getBoundingClientRect(); return [r.left + ox + (cx(cell) + M) * z, r.top + oy + (cy(cell) + M) * z]; },
     };

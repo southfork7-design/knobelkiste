@@ -2,7 +2,7 @@
 //
 // Gebaut wird rückwärts: Zuerst steht die Form, die im Spiel als letzte verschwindet, auf einem
 // fast leeren Brett. Jede neu hinzugefügte Form wird im Spiel FRÜHER erledigt: Sie bekommt einen
-// freien Weg und ihre Plüschtiere neben diesen Weg (oder vorn in einen Raum). Ihre Startlage und
+// freien Weg und ihre Plüschtiere auf Felder dieses Weges (oder vorn in einen Raum). Ihre Startlage und
 // ihre Tiere dürfen auf den Wegen später erledigter Formen liegen – so entstehen Abhängigkeiten.
 // Manchmal wird zusätzlich eine schon stehende Form (oft ein graues Hindernis) so verschoben,
 // dass sie den neuen Weg versperrt; im Spiel muss sie dann zuerst beiseite.
@@ -10,7 +10,7 @@
 import { mulberry32, shuffle, randInt } from '../../rng.js';
 import { SHAPES, prep, cellsAt, initialState, occupancy, touches, reach, pathTo, applyMove, isWon } from './model.js';
 
-export const VERSION = 1;
+export const VERSION = 2;
 
 export function levelParams(level) {
   const t = Math.min(1, (level - 1) / 39);
@@ -145,7 +145,7 @@ function tryAdd(G, prm, rnd, small = false) {
   const p = L.pieces.length - 1;
   const s = initialState(L);
   const occ = occupancy(L, s);
-  const { nb, doorAt } = prep(L);
+  const { doorAt } = prep(L);
 
   // Startlage: frei und ohne Berührung; davon die mit dem längsten möglichen Weg
   const anchors = shuffle(Array.from({ length: G.cols * G.rows }, (_, i) => i), rnd);
@@ -179,21 +179,12 @@ function tryAdd(G, prm, rnd, small = false) {
     if (atDoor.length) pick = atDoor[Math.floor(rnd() * atDoor.length)];
   }
   const path = pick.path;
-  const pathCells = new Set();
-  for (const a of path) for (const c of cellsAt(L, p, a)) pathCells.add(c);
-  const startNear = new Set();
-  for (const c of startCells) { startNear.add(c); for (const n of nb[c]) startNear.add(n); }
-
-  // Plätze für die Tiere: neben dem Weg (nicht darauf), nicht neben der Startlage,
-  // nicht neben einer anderen Form gleicher Farbe; oder vorn in einen Raum am Weg.
+  // Plätze für die Tiere: Felder, die die Form auf ihrem Weg überfährt (nicht schon am Start),
+  // oder vorn in einem Raum, an dessen Tür der Weg vorbeiführt. t = wann sie das Feld zuerst erreicht.
   const cand = new Map(); // key -> { t, room?, cell? }
   for (let t = 1; t < path.length; t++) {
     for (const c of cellsAt(L, p, path[t])) {
-      for (const n of nb[c]) {
-        if (occ[n] !== 0 || pathCells.has(n) || startNear.has(n) || cand.has('c' + n)) continue;
-        if (nb[n].some((m) => occ[m] > 0 && occ[m] !== p + 1 && L.pieces[occ[m] - 1].color === color)) continue;
-        cand.set('c' + n, { t, cell: n });
-      }
+      if (!startCells.includes(c) && occ[c] === 0 && !cand.has('c' + c)) cand.set('c' + c, { t, cell: c });
       const r = doorAt[c];
       if (r >= 0 && !startCells.includes(c) && !cand.has('r' + r)) {
         const free = G.rooms[r].max - G.rooms[r].queue.length;

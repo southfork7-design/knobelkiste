@@ -3,8 +3,9 @@
 // Brett aus Feldern (cols × rows), einzelne Felder können Wand sein.
 // Formen (Polyominos) haben eine Farbe (oder sind grau = Hindernis, Farbe -1), lassen sich
 // Feld für Feld schieben (axis 1 = nur waagerecht, 2 = nur senkrecht) und fassen je Quadrat
-// ein Plüschtier. Grenzt eine Form an ein gleichfarbiges Plüschtier, springt es hinein;
-// ist sie voll, verschwindet sie. Räume hängen außen am Rand an einem Türfeld; das vorderste
+// ein Plüschtier. Gleichfarbige Plüschtiere sind für eine Form kein Hindernis: Schiebt man sie
+// auf das Feld eines solchen Tiers, fällt es hinein (andersfarbige Tiere versperren den Weg;
+// mehr Tiere, als noch Platz ist, kann sie nicht überfahren). Ist sie voll, verschwindet sie. Räume hängen außen am Rand an einem Türfeld; das vorderste
 // Tier springt in eine gleichfarbige Form, die auf dem Türfeld steht, dann rückt das nächste nach.
 // Verdeckte Formen (lock = k) sind gesperrt, bis insgesamt k Formen verschwunden sind.
 
@@ -106,10 +107,11 @@ export const isAlive = (s, p) => s.pos[p] >= 0;
 export const canMove = (L, s, p) => s.pos[p] >= 0 && !isLocked(L, s, p);
 export const size = (L, p) => L.pieces[p].cells.length;
 
-// Belegung: -1 Wand, 0 frei, -2 Plüschtier, p+1 Form p
+// Belegung: -1 Wand, 0 frei, -10-c Plüschtier der Farbe c, p+1 Form p
+export const plushCode = (c) => -10 - c;
 export function occupancy(L, s) {
   const occ = new Int16Array(L.cols * L.rows);
-  for (let i = 0; i < occ.length; i++) occ[i] = L.wall[i] ? -1 : s.plush[i] >= 0 ? -2 : 0;
+  for (let i = 0; i < occ.length; i++) occ[i] = L.wall[i] ? -1 : s.plush[i] >= 0 ? plushCode(s.plush[i]) : 0;
   for (let p = 0; p < L.pieces.length; p++) {
     if (s.pos[p] < 0) continue;
     for (const c of cellsAt(L, p, s.pos[p])) occ[c] = p + 1;
@@ -119,58 +121,62 @@ export function occupancy(L, s) {
 
 const dirAllowed = (axis, d) => axis === 0 || (axis === 1 ? d < 2 : d >= 2);
 
-// Nächste Ecke beim Schritt in Richtung d (oder -1, wenn nicht möglich)
-export function stepTarget(L, occ, p, a, d) {
+// Nächste Ecke beim Schritt in Richtung d (oder -1, wenn nicht möglich).
+// cap = wie viele Tiere die Form noch fasst (so viele gleichfarbige darf sie neu überfahren).
+export function stepTarget(L, occ, p, a, d, cap = 99) {
   const cols = L.cols, P = prep(L);
   if (!dirAllowed(L.pieces[p].axis, d)) return -1;
   const ax = a % cols + DIRS[d][0], ay = ((a / cols) | 0) + DIRS[d][1];
   if (ax < 0 || ay < 0 || ax + P.w[p] > cols || ay + P.h[p] > L.rows) return -1;
-  const na = ay * cols + ax;
+  const na = ay * cols + ax, mine = plushCode(L.pieces[p].color);
+  let n = 0;
   for (const [dx, dy] of L.pieces[p].cells) {
     const v = occ[(ay + dy) * cols + ax + dx];
-    if (v !== 0 && v !== p + 1) return -1;
+    if (v === 0 || v === p + 1) continue;
+    if (v === mine && L.pieces[p].color >= 0) { n++; continue; }
+    return -1;
   }
-  return na;
+  return n > cap ? -1 : na;
 }
 
-// Würde Form p auf Ecke a ein gleichfarbiges Tier berühren?
+// Würde Form p auf Ecke a ein Tier aufnehmen (gleichfarbiges Tier darunter oder Raumtür)?
 export function touches(L, s, p, a, cells = cellsAt(L, p, a)) {
   const col = L.pieces[p].color;
   if (col < 0) return false;
-  const { nb, doorAt } = prep(L);
+  const { doorAt } = prep(L);
   for (const c of cells) {
-    for (const n of nb[c]) if (s.plush[n] === col) return true;
+    if (s.plush[c] === col) return true;
     const r = doorAt[c];
     if (r >= 0 && L.rooms[r].queue[s.room[r]] === col) return true;
   }
   return false;
 }
 
-// Form p nimmt angrenzende gleichfarbige Tiere auf (ev: Ereignisliste für die Darstellung)
+// Form p nimmt gleichfarbige Tiere unter sich und aus dem Raum an ihrer Tür auf
+// (ev: Ereignisliste für die Darstellung; k = Quadrat der Form, in das das Tier fällt)
 export function absorb(L, s, occ, p, ev) {
   const piece = L.pieces[p];
   if (piece.color < 0 || s.pos[p] < 0 || piece.lock > s.gone) return;
-  const { nb, doorAt } = prep(L);
+  const { doorAt } = prep(L);
   const k = piece.cells.length, col = piece.color;
   const cells = cellsAt(L, p, s.pos[p]);
-  for (const c of cells) {
-    for (const n of nb[c]) {
-      if (s.fill[p] >= k) break;
-      if (s.plush[n] === col) {
-        s.plush[n] = -1; occ[n] = 0;
-        ev && ev.push({ t: 'take', p, from: n, slot: s.fill[p] });
-        s.fill[p]++;
-      }
+  cells.forEach((c, i) => {
+    if (s.plush[c] === col && s.fill[p] < k) {
+      s.plush[c] = -1;
+      ev && ev.push({ t: 'take', p, from: c, k: i });
+      s.fill[p]++;
     }
+  });
+  cells.forEach((c, i) => {
     const r = doorAt[c];
     if (r >= 0) {
       const q = L.rooms[r].queue;
       while (s.fill[p] < k && s.room[r] < q.length && q[s.room[r]] === col) {
-        ev && ev.push({ t: 'room', p, r, idx: s.room[r], slot: s.fill[p] });
+        ev && ev.push({ t: 'room', p, r, idx: s.room[r], k: i });
         s.room[r]++; s.fill[p]++;
       }
     }
-  }
+  });
   if (s.fill[p] >= k) {
     const at = s.pos[p];
     for (const c of cells) occ[c] = 0;
@@ -190,7 +196,7 @@ export function absorb(L, s, occ, p, ev) {
 export function step(L, s, occ, p, d, ev) {
   if (!canMove(L, s, p)) return false;
   const a = s.pos[p];
-  const na = stepTarget(L, occ, p, a, d);
+  const na = stepTarget(L, occ, p, a, d, size(L, p) - s.fill[p]);
   if (na < 0) return false;
   for (const c of cellsAt(L, p, a)) occ[c] = 0;
   for (const c of cellsAt(L, p, na)) occ[c] = p + 1;
@@ -234,18 +240,19 @@ export function plushLeft(L, s) {
 }
 
 // ---------- Erreichbare Lagen ----------
-// Breitensuche über die Ecken von Form p. Lagen, in denen sie ein Tier berühren würde,
-// werden als Ziel gemerkt, aber nicht weiter durchlaufen (dort springt ein Tier hinein).
+// Breitensuche über die Ecken von Form p. Lagen, in denen sie ein Tier aufnehmen würde,
+// werden als Ziel gemerkt, aber nicht weiter durchlaufen.
 export function reach(L, s, occ, p) {
   const N = L.cols * L.rows;
   const par = new Int32Array(N).fill(-2);
   const start = s.pos[p];
   par[start] = -1;
   const queue = [start], hits = [], free = [];
+  const cap = L.pieces[p].color >= 0 ? size(L, p) - s.fill[p] : 0;
   for (let qi = 0; qi < queue.length; qi++) {
     const a = queue[qi];
     for (let d = 0; d < 4; d++) {
-      const na = stepTarget(L, occ, p, a, d);
+      const na = stepTarget(L, occ, p, a, d, cap);
       if (na < 0 || par[na] !== -2) continue;
       par[na] = a;
       if (touches(L, s, p, na)) hits.push(na);
@@ -282,7 +289,7 @@ function touchFor(L, p, from, lo, hi) {
   seen[from] = 1;
   for (let qi = 0; qi < queue.length; qi++) {
     const a = queue[qi];
-    for (const c of cellsAt(L, p, a)) { near[c] = 1; own[c] = 1; for (const n of P.nb[c]) near[n] = 1; }
+    for (const c of cellsAt(L, p, a)) { near[c] = 1; own[c] = 1; }
     for (let d = 0; d < 4; d++) {
       const na = stepTarget(L, occ, p, a, d);
       if (na < 0 || seen[na]) continue;
@@ -432,11 +439,11 @@ function productive(L, s, occ) {
   return out;
 }
 function gain(L, s, p, a) {
-  const col = L.pieces[p].color, { nb, doorAt } = prep(L);
-  const cells = cellsAt(L, p, a), seen = new Set();
+  const col = L.pieces[p].color, { doorAt } = prep(L);
+  const cells = cellsAt(L, p, a);
   let g = 0;
   for (const c of cells) {
-    for (const n of nb[c]) if (s.plush[n] === col && !seen.has(n)) { seen.add(n); g++; }
+    if (s.plush[c] === col) g++;
     const r = doorAt[c];
     if (r >= 0) for (let j = s.room[r]; j < L.rooms[r].queue.length && L.rooms[r].queue[j] === col; j++) g++;
   }
@@ -456,7 +463,8 @@ export function costSearch(L, s, occ, p, goal) {
     let k = 0;
     for (const x of cellsAt(L, p, na)) {
       const v = occ[x];
-      if (v === -1 || v === -2) return -1;
+      if (v === -1) return -1;
+      if (v <= -10) { if (v === plushCode(L.pieces[p].color) && L.pieces[p].color >= 0) continue; return -1; }
       if (v > 0 && v !== p + 1) { if (!canMove(L, s, v - 1)) return -1; k = 1; }
     }
     return k;

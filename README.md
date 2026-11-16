@@ -14,7 +14,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Schraubwerk (Schrauben umsetzen, 6×8 bis 12×17 Löcher; Teile pendeln, stoßen an Schrauben, rutschen ab oder fallen; Löser prüft jedes Level) | spielbar |
 | Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren; 7×9 bis 14×20, bis ~300 Figuren) | spielbar |
 | Fallenfeld (verdeckte Fallen finden, Zahlen zeigen die Nachbarn; 10×10 bis 50×50, ohne Raten lösbar) | spielbar |
-| Kuschelfracht (Formen schieben, gleichfarbige Plüschtiere springen hinein; Räume, Hindernisse, Richtungsformen, Schlösser; 8×13 bis 16×26) | spielbar |
+| Kuschelfracht (Formen über gleichfarbige Plüschtiere schieben, die Tiere fallen hinein; Räume, Hindernisse, Richtungsformen, Schlösser; 8×13 bis 16×26) | spielbar |
 
 ## Grundsätze (für alle Spiele)
 - Keine Werbung, keine Musik, keine motivierenden Ausrufe oder Lobtexte. Texte bleiben nüchtern („Gelöst“, Zeit, Fehler).
