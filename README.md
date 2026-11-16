@@ -9,7 +9,8 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Pfeilwürfel (Pfeile auf Würfeln, Quadern und Blockgebilden, drehbar) | spielbar |
 | Kronenfeld (1–3 Kronen pro Zeile/Spalte/Region, 7×7 bis 16×16) | spielbar |
 | Gleisbau – Einzelfeld (8×8 bis 18×24, teils mit Felsen) und Großstrecke (2/4/6 verbundene Felder à 12–16, am Ende Gesamtkarte) | spielbar |
-| Bilderrätsel (Nonogramm, 5×5 bis 15×15; eigene Motive + erzeugte Muster) | spielbar |
+| Bilderrätsel (Nonogramm, 10×10 bis 30×40; anfangs eigene Motive, dann erzeugte Muster) | spielbar |
+| Farbbilder (Nonogramm mit 2–4 Farben, 15×15 bis 30×35) | spielbar |
 | Schraubwerk (Schrauben umsetzen, Teile pendeln und fallen; Löser prüft jedes Level) | spielbar |
 | Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren) | spielbar |
 
@@ -25,6 +26,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `js/games/<spiel>/game.js` – Darstellung und Bedienung
 - `js/games/screws/model.js` – Spielregeln/Geometrie von Schraubwerk (auch vom Löser genutzt)
 - `js/games/nonogram/motifs.js` – eigene Pixel-Motive (werden nur genutzt, wenn rein logisch lösbar)
+- `js/games/nonogram/color.js` – Farbbilder: Farb-Zeilenlöser und Generator (`node tools/test-nonogram-color.js`)
 - `js/games/tracks/worker.js` + `gen-client.js` – Gleisbau-Rätsel werden im Hintergrund erzeugt (nächstes Feld/Level schon vorab, im Browser gespeichert); `generator.js` enthält den logischen Löser (ohne Raten)
 - `sw.js` – Offline-Cache (bei Änderungen `VERSION` hochzählen)
 - `tools/test-*.js` – prüfen Level auf Lösbarkeit bzw. Eindeutigkeit (`node tools/test-crowns.js` usw.)
@@ -45,6 +47,7 @@ Direkt-Links (lokal mit `python tools/serve.py 8123`):
 | Gleisbau – Einzelfeld | `js/games/tracks/` | http://localhost:8123/?spiel=tracks |
 | Gleisbau – Großstrecke | `js/games/tracks/` | http://localhost:8123/?spiel=tracksRoute |
 | Bilderrätsel | `js/games/nonogram/` | http://localhost:8123/?spiel=nonogram |
+| Farbbilder | `js/games/nonogram/` (`color.js`) | http://localhost:8123/?spiel=nonogramColor |
 | Schraubwerk | `js/games/screws/` | http://localhost:8123/?spiel=screws |
 | Farbräumer | `js/games/colors/` | http://localhost:8123/?spiel=colors |
 

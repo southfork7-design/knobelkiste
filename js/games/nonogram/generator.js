@@ -82,24 +82,31 @@ export function solveLine(line, clues) {
 }
 
 // Löst das ganze Rätsel mit Zeilenlogik. Liefert { grid, solved, passes }.
+// Es werden nur Zeilen/Spalten neu betrachtet, in denen sich etwas geändert hat.
 export function lineSolve(rowClues, colClues, start = null) {
   const R = rowClues.length, Cn = colClues.length;
   const grid = start ? start.slice() : new Uint8Array(R * Cn);
+  const rowDirty = new Uint8Array(R).fill(1), colDirty = new Uint8Array(Cn).fill(1);
   let changed = true, passes = 0;
+  const rowLine = new Array(Cn), colLine = new Array(R);
   while (changed) {
     changed = false;
     passes++;
     for (let r = 0; r < R; r++) {
-      const line = Array.from({ length: Cn }, (_, c) => grid[r * Cn + c]);
-      const res = solveLine(line, rowClues[r]);
+      if (!rowDirty[r]) continue;
+      rowDirty[r] = 0;
+      for (let c = 0; c < Cn; c++) rowLine[c] = grid[r * Cn + c];
+      const res = solveLine(rowLine, rowClues[r]);
       if (!res) return { grid, solved: false, contradiction: true, passes };
-      for (let c = 0; c < Cn; c++) if (res[c] !== line[c]) { grid[r * Cn + c] = res[c]; changed = true; }
+      for (let c = 0; c < Cn; c++) if (res[c] !== rowLine[c]) { grid[r * Cn + c] = res[c]; colDirty[c] = 1; changed = true; }
     }
     for (let c = 0; c < Cn; c++) {
-      const line = Array.from({ length: R }, (_, r) => grid[r * Cn + c]);
-      const res = solveLine(line, colClues[c]);
+      if (!colDirty[c]) continue;
+      colDirty[c] = 0;
+      for (let r = 0; r < R; r++) colLine[r] = grid[r * Cn + c];
+      const res = solveLine(colLine, colClues[c]);
       if (!res) return { grid, solved: false, contradiction: true, passes };
-      for (let r = 0; r < R; r++) if (res[r] !== line[r]) { grid[r * Cn + c] = res[r]; changed = true; }
+      for (let r = 0; r < R; r++) if (res[r] !== colLine[r]) { grid[r * Cn + c] = res[r]; rowDirty[r] = 1; changed = true; }
     }
   }
   return { grid, solved: grid.every((v) => v !== 0), passes };
@@ -114,76 +121,92 @@ export function puzzleFrom(rows, cols, pixels, name = null) {
 
 export const motifPixels = (m) => m.rows.join('').split('').map((ch) => (ch === '#' ? 1 : 0));
 
-// Erzeugtes, symmetrisches Muster (weiche Formen durch Glättung)
-function randomPattern(n, rnd) {
+// Erzeugtes Muster R×K (Zeilen × Spalten), meist spiegelsymmetrisch
+// (links/rechts oder zusätzlich oben/unten wie ein Teppichmuster).
+// Nur ein Glättungsschritt → kleinteilige Formen mit vielen Blöcken.
+function randomPattern(R, K, rnd) {
   for (;;) {
-    let px = new Uint8Array(n * n);
-    const mirror = rnd() < 0.75;
-    for (let r = 0; r < n; r++)
-      for (let c = 0; c < n; c++) px[r * n + c] = rnd() < 0.52 ? 1 : 0;
-    const smooth = () => {
-      const nx = new Uint8Array(n * n);
-      for (let r = 0; r < n; r++)
-        for (let c = 0; c < n; c++) {
-          let s = 0;
-          for (let dr = -1; dr <= 1; dr++)
-            for (let dc = -1; dc <= 1; dc++) {
-              const rr = r + dr, cc = c + dc;
-              if (rr >= 0 && cc >= 0 && rr < n && cc < n) s += px[rr * n + cc];
-            }
-          nx[r * n + c] = s >= 5 ? 1 : s <= 3 ? 0 : px[r * n + c];
-        }
-      px = nx;
-    };
+    let px = new Uint8Array(R * K);
+    const q = rnd();
+    const mirror = q < 0.8 ? (q < 0.4 ? 2 : 1) : 0; // 2 = auch oben/unten
+    const p = 0.5 + rnd() * 0.06;
+    for (let i = 0; i < R * K; i++) px[i] = rnd() < p ? 1 : 0;
     const symmetrize = () => {
       if (!mirror) return;
-      for (let r = 0; r < n; r++)
-        for (let c = 0; c < Math.floor(n / 2); c++) px[r * n + (n - 1 - c)] = px[r * n + c];
+      for (let r = 0; r < R; r++)
+        for (let c = 0; c < Math.floor(K / 2); c++) px[r * K + (K - 1 - c)] = px[r * K + c];
+      if (mirror === 2)
+        for (let r = 0; r < Math.floor(R / 2); r++)
+          for (let c = 0; c < K; c++) px[(R - 1 - r) * K + c] = px[r * K + c];
     };
     symmetrize();
-    smooth();
-    if (n > 6) smooth();
+    const nx = new Uint8Array(R * K);
+    for (let r = 0; r < R; r++)
+      for (let c = 0; c < K; c++) {
+        let s = 0;
+        for (let dr = -1; dr <= 1; dr++)
+          for (let dc = -1; dc <= 1; dc++) {
+            const rr = r + dr, cc = c + dc;
+            if (rr >= 0 && cc >= 0 && rr < R && cc < K) s += px[rr * K + cc];
+          }
+        nx[r * K + c] = s >= 6 ? 1 : s <= 3 ? 0 : px[r * K + c];
+      }
+    px = nx;
     symmetrize();
-    const fill = px.reduce((a, b) => a + b, 0) / (n * n);
-    if (fill >= 0.35 && fill <= 0.7) return { px, mirror };
+    const fill = px.reduce((a, b) => a + b, 0) / (R * K);
+    if (fill >= 0.4 && fill <= 0.62) return { px, mirror };
   }
 }
 
 // Macht ein Muster logisch lösbar: Felder, die der Löser nicht bestimmen
 // kann, werden (samt Spiegelfeld) umgeschaltet, bis alles aufgeht.
-function makeSolvable(n, px, mirror, rnd, maxSteps = 40) {
+// Liefert das Rätsel und die Zahl der Löserrunden (Maß für die Schwierigkeit).
+function makeSolvable(R, K, px, mirror, rnd) {
+  const maxSteps = Math.max(40, (R * K) >> 2);
   for (let step = 0; step < maxSteps; step++) {
-    const p = puzzleFrom(n, n, px);
-    const { grid, solved } = lineSolve(p.rowClues, p.colClues);
-    if (solved) return p;
+    const p = puzzleFrom(R, K, px);
+    const { grid, solved, passes } = lineSolve(p.rowClues, p.colClues);
+    if (solved) return { p, passes };
     const open = [];
-    for (let i = 0; i < n * n; i++) if (grid[i] === 0) open.push(i);
-    const i = open[Math.floor(rnd() * open.length)];
-    const r = Math.floor(i / n), c = i % n;
-    px[i] ^= 1;
-    if (mirror) px[r * n + (n - 1 - c)] = px[i];
+    for (let i = 0; i < R * K; i++) if (grid[i] === 0) open.push(i);
+    // bei vielen offenen Feldern gleich mehrere umschalten (schneller)
+    const flips = Math.max(1, Math.floor(open.length / 25));
+    for (let f = 0; f < flips; f++) {
+      const i = open[Math.floor(rnd() * open.length)];
+      const r = Math.floor(i / K), c = i % K;
+      px[i] ^= 1;
+      if (mirror) px[r * K + (K - 1 - c)] = px[i];
+      if (mirror === 2) { px[(R - 1 - r) * K + c] = px[i]; px[(R - 1 - r) * K + (K - 1 - c)] = px[i]; }
+    }
   }
   return null;
 }
 
+// Feldgröße (rows × cols) je Level; Motive nur in den ersten Leveln.
 export function levelParams(level) {
-  if (level <= 3) return { n: 5, motif: null };
-  if (level <= 14) return { n: 10, motif: level % 2 === 0 ? MOTIFS_10[(level - 4) / 2] ?? null : null };
-  // 15×15: jedes dritte Level ein Motiv (solange vorhanden)
-  const idx = (level - 15) / 3;
-  return { n: 15, motif: Number.isInteger(idx) ? MOTIFS_15[idx] ?? null : null };
+  if (level <= 2) return { rows: 10, cols: 10, motif: MOTIFS_10[level - 1] };
+  if (level <= 6) return { rows: 15, cols: 15, motif: level % 2 ? MOTIFS_15[(level - 3) / 2] : null };
+  if (level <= 10) return { rows: 20, cols: 20, motif: null };
+  if (level <= 15) return { rows: 25, cols: 25, motif: null };
+  if (level <= 20) return { rows: 30, cols: 25, motif: null };
+  if (level <= 30) return { rows: 35, cols: 30, motif: null };
+  return { rows: level % 2 ? 40 : 35, cols: 30, motif: null };
 }
 
+const CANDIDATES = 6; // aus so vielen lösbaren Mustern wird das schwierigste genommen
+
 export function generateLevel(level) {
-  const { n, motif } = levelParams(level);
+  const { rows: R, cols: K, motif } = levelParams(level);
   if (motif) {
-    const p = puzzleFrom(n, n, motifPixels(motif), motif.name);
+    const p = puzzleFrom(R, K, motifPixels(motif), motif.name);
     if (lineSolve(p.rowClues, p.colClues).solved) return { ...p, level };
   }
   const rnd = mulberry32(level * 5167 + 811);
-  for (;;) {
-    const { px, mirror } = randomPattern(n, rnd);
-    const p = makeSolvable(n, px, mirror, rnd);
-    if (p) return { ...p, level };
+  let best = null;
+  for (let n = 0; n < CANDIDATES || !best; n++) {
+    const { px, mirror } = randomPattern(R, K, rnd);
+    const res = makeSolvable(R, K, px, mirror, rnd);
+    if (res && (!best || res.passes > best.passes)) best = res;
   }
+  return { ...best.p, level };
 }

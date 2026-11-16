@@ -252,25 +252,56 @@ button { font: inherit; color: inherit; }
 .overlay .card:has(.map-wrap.big) { width: min(380px, 100%); }
 
 /* ---------- Bilderrätsel ---------- */
-.board-wrap.nono-wrap { flex-direction: column; gap: 12px; }
-.board.nono { touch-action: none; flex: 1; min-height: 0; }
+.board-wrap.nono-wrap { flex-direction: column; gap: 10px; }
+.nono-view { position: relative; flex: 1; min-height: 0; width: 100%; overflow: hidden; isolation: isolate; }
+/* Farben: Schwarz-Weiß nutzt nur --nc1 = Schrift; Farbbilder ohne Rot (Rot = Regelverstoß) */
+.nono-wrap { --nc1: var(--ink); --nc2: var(--ink); --nc3: var(--ink); --nc4: var(--ink); }
+.nono-wrap:has(.colored) { --nc1: #2f6fb5; --nc2: #d08f00; --nc3: #3a8a45; --nc4: #8a4fb0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nono-wrap:has(.colored) { --nc1: #6ea2e8; --nc2: #eab43a; --nc3: #6cc07a; --nc4: #c08ae0; }
+}
+:root[data-theme="dark"] .nono-wrap:has(.colored) { --nc1: #6ea2e8; --nc2: #eab43a; --nc3: #6cc07a; --nc4: #c08ae0; }
+.nono .c1, .nono-clues .c1, .tool-switch .c1 { --nc: var(--nc1); }
+.nono .c2, .nono-clues .c2, .tool-switch .c2 { --nc: var(--nc2); }
+.nono .c3, .nono-clues .c3, .tool-switch .c3 { --nc: var(--nc3); }
+.nono .c4, .nono-clues .c4, .tool-switch .c4 { --nc: var(--nc4); }
+.nono-clues i { font-style: normal; color: var(--nc, var(--ink)); }
+.board.nono { position: absolute; inset: 0; display: block; touch-action: none; }
 .nono .field { fill: var(--surface); }
-.nono .clue-line text { font-size: 5.2px; font-weight: 650; fill: var(--ink); text-anchor: middle; transition: opacity .2s; }
-.nono .clue-line.done text { opacity: .3; }
-.nono .fills { fill: var(--ink); }
-.nono .crosses { stroke: var(--ink); stroke-opacity: .45; stroke-width: .6; stroke-linecap: round; fill: none; }
-.nono .grid-thin { stroke: var(--ink); stroke-opacity: .13; stroke-width: .25; fill: none; }
-.nono .grid-thick { stroke: var(--ink); stroke-opacity: .45; stroke-width: .5; fill: none; }
-.nono .grid-frame { stroke: var(--ink); stroke-opacity: .7; stroke-width: .7; fill: none; }
-.nono .line-hl { fill: var(--accent); opacity: .08; }
+.nono .fills { fill: var(--nc); transition: fill .4s; }
+.nono .crosses { stroke: var(--ink); stroke-opacity: .45; stroke-width: .7; stroke-linecap: round; fill: none; }
+.nono .grid-thin { stroke: var(--ink); stroke-opacity: .16; stroke-width: .5px; vector-effect: non-scaling-stroke; fill: none; transition: opacity .4s; }
+.nono .grid-thick { stroke: var(--ink); stroke-opacity: .5; stroke-width: 1px; vector-effect: non-scaling-stroke; fill: none; transition: opacity .4s; }
+.nono .grid-frame { stroke: var(--ink); stroke-opacity: .7; stroke-width: 1.2px; vector-effect: non-scaling-stroke; fill: none; }
+.nono .line-hl { fill: var(--accent); opacity: .1; }
 .nono .hint-cell { fill: var(--accent); animation: hintfade .9s ease-in-out infinite; }
-.nono.solved .fills { fill: var(--accent); transition: fill .6s; }
-.nono.solved .grid-thin, .nono.solved .grid-thick { opacity: 0; transition: opacity .8s; }
-.nono.solved .clue-line text { opacity: .15; }
+.nono .ghost { fill: none; stroke: var(--nc, var(--accent)); stroke-width: 1px; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-dasharray: 3 2; }
+.nono.bw.solved .fills { fill: var(--accent); }
+.nono.solved .grid-thin, .nono.solved .grid-thick { opacity: 0; }
+.nono-clues { position: absolute; inset: 0; pointer-events: none; z-index: 2; font-weight: 650; font-variant-numeric: tabular-nums; }
+.nono-clues span { position: absolute; left: 0; top: 0; line-height: 1.08; white-space: pre; transition: color .2s, opacity .2s; }
+.nono-clues span.row { word-spacing: .12em; }
+.nono-clues span.col { text-align: center; letter-spacing: -.04em; }
+.nono-clues span.done { opacity: .3; }
+.nono-clues span.bad i { color: var(--danger); text-decoration: underline; }
+.nono-view.solved .nono-clues span { opacity: .15; }
+.nono-band { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; background: var(--bg); opacity: 0; transition: opacity .15s; }
+.nono-band.top { right: 0; box-shadow: 0 1px 0 var(--line); }
+.nono-band.left { bottom: 0; box-shadow: 1px 0 0 var(--line); }
+.nono-band.on { opacity: 1; }
+.nono-fit {
+  position: absolute; right: 0; bottom: 0; z-index: 3; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font-size: 13px; cursor: pointer;
+}
+.nono-fit[hidden] { display: none; }
+.tool-btn.nono-no-hint { opacity: 0.4; cursor: default; }
 .tool-switch { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
 .tool-switch button { display: flex; align-items: center; gap: 8px; padding: 9px 18px; border: none; background: transparent; cursor: pointer; font-size: 15px; color: var(--muted); }
 .tool-switch button.on { background: var(--bg); color: var(--ink); font-weight: 600; }
-.sw-fill { width: 14px; height: 14px; border-radius: 2px; background: var(--ink); display: inline-block; }
+.sw-fill { width: 14px; height: 14px; border-radius: 2px; background: var(--nc, var(--ink)); display: inline-block; }
+.tool-switch.colored button { padding: 9px 16px; }
+.tool-switch.colored .sw-fill { width: 20px; height: 20px; border-radius: 4px; }
+.tool-switch.colored button.on { box-shadow: inset 0 -3px 0 var(--ink); }
 .sw-x { font-size: 14px; }
 
 /* ---------- Schraubwerk ---------- */
