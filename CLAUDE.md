@@ -38,3 +38,4 @@ Jedes Spiel wird in einer eigenen Sitzung überarbeitet. In so einer Sitzung:
 | Bilderrätsel / Farbbilder | nonogram / nonogramColor | js/games/nonogram |
 | Schraubwerk | screws | js/games/screws |
 | Farbräumer | colors | js/games/colors |
+| Fallenfeld | traps | js/games/traps |

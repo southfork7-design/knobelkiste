@@ -1,7 +1,7 @@
 # Stand der Knobelkiste (15.11.2026)
 
 ## Fertig
-Alle acht Spiele sind spielbar, mit endlosen, geprüften Leveln, Dunkelmodus, dezenten Geräuschen,
+Alle neun Spiele sind spielbar, mit endlosen, geprüften Leveln, Dunkelmodus, dezenten Geräuschen,
 Tipp-Funktion und – wo sinnvoll – Rückgängig:
 
 | Spiel | Kurzbeschreibung | Getestet bis |
@@ -14,6 +14,7 @@ Tipp-Funktion und – wo sinnvoll – Rückgängig:
 | Farbbilder (neu, 16.11.) | Farb-Nonogramm mit 2–4 Farben (gleiche Farbe braucht Lücke, verschiedene dürfen sich berühren), 15×15 bis 30×35, Bedienung wie Bilderrätsel, je Farbe ein Werkzeug | Level 60 eindeutig, ohne Raten; Farb-Löser gegen vollständige Suche geprüft |
 | Schraubwerk ✔ überarbeitet (16.11.) | Schrauben umsetzen; Bretter 6×8 bis 12×17 Löcher, 16–82 Teile dicht in zwei Lagen, knappe freie Löcher; Physik: Schrauben ragen als Stifte durch die Lagen, pendelnde Teile lehnen sich an, fallende rutschen ab oder bleiben liegen (Starrkörper-Simulation); Zoomen/Verschieben; 3 Herzen: Tipp und Sackgasse (kein Zug mehr, wird zurückgenommen) kosten je ein Herz; Stand im Level wird gespeichert | Level 60 lösbar (Löser spielt nach) |
 | Farbräumer ✔ überarbeitet (16.11.) | Figuren in Farb-Behälter (3–5 Stapel), Ablage, Tore; Bretter 7×9 bis 14×20, voll gefüllt (63–300 Figuren), 4–7 Farben; Level entstehen entlang einer Lösung; bei zwei offenen Behältern gleicher Farbe geht die Figur in den volleren; Zoomen/Verschieben, Behälter/Ablage bleiben oben fest; 3 Herzen: Tipp und Sackgasse (kein Zug mehr, wird zurückgenommen) kosten je ein Herz; Stand im Level wird gespeichert | Level 80 lösbar (Lösung nachgespielt) |
+| Fallenfeld (neu, 16.11.) | Verdeckte Fallen finden, Zahlen zeigen die Fallen in den 8 Nachbarn; 10×10 bis 50×50 (ab Level 31), Fallen 14 % → 21 %; Startbereich offen, logischer Löser (eine Zahl, zwei Zahlen, Restanzahl) prüft „ohne Raten“, schwierigstes von 6; Tippen = Markierung, Doppeltippen = aufdecken (markierte Felder geschützt), Doppeltippen auf Zahl = Rest aufdecken; 3 Herzen: Falle, zu viele Markierungen an einer Zahl, Tipp; Zoomen/Verschieben; Stand im Level wird gespeichert | Level 60 ohne Raten lösbar; Löser gegen vollständige Suche geprüft |
 
 Alles wurde bisher nur im Browser in Handygröße getestet – noch nicht auf dem echten Handy.
 
@@ -30,7 +31,7 @@ Alles wurde bisher nur im Browser in Handygröße getestet – noch nicht auf de
 - Gleisbau: 18×24 braucht am PC 5–7 s zum Erzeugen (Handy geschätzt 15–20 s); läuft im Hintergrund vorab und wird im Browser gespeichert. Falls es stört: Bank wie bei Kronenfeld.
 - Kronenfeld: Bank für 14×14/15×15/16×16 hat 46/39/40 Rätsel (×8 durch Drehen) – bei Bedarf mit
   `node tools/make-crowns-bank.js <n> <k> <anzahl> <startSeed>` erweitern, dann `--build` und `node tools/test-crowns.js`.
-- Idee für ein neues Spiel: im Stil von Minesweeper (nur die Mechanik), Felder etwa 10×10 bis 50×50.
+- Fallenfeld: Erzeugung 50×50 am PC 0,2–0,8 s (Handy geschätzt 1–2 s, ohne Worker) – beobachten. Startbereich teils klein (9 Felder). Schwierigkeit über Fallenanteil in `levelParams`. Stand: `knobelkiste-traps-stand`.
 - Pfeilwürfel: große Level brauchen auf dem Handy evtl. 1–2 s zum Aufbauen – beobachten.
 - Farbbilder sind logisch eher leicht (6–8 Löserrunden), Schwierigkeit kommt über die Feldgröße; Bilderrätsel-Level brauchen am PC bis ~0,4 s (Handy ~1 s) – beobachten.
 - Bilderrätsel/Farbbilder: Stand im laufenden Level wird gespeichert (`knobelkiste-nonogram-stand` bzw. `-nonogramColor-stand`); Neu/Nochmal/Lösen verwerfen ihn.
