@@ -39,3 +39,4 @@ Jedes Spiel wird in einer eigenen Sitzung überarbeitet. In so einer Sitzung:
 | Schraubwerk | screws | js/games/screws |
 | Farbräumer | colors | js/games/colors |
 | Fallenfeld | traps | js/games/traps |
+| Kuschelfracht | plush | js/games/plush |
