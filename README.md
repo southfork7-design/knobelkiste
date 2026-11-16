@@ -11,7 +11,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Gleisbau – Einzelfeld (8×8 bis 18×24, teils mit Felsen) und Großstrecke (2/4/6 verbundene Felder à 12–16, am Ende Gesamtkarte) | spielbar |
 | Bilderrätsel (Nonogramm, 10×10 bis 30×40; anfangs eigene Motive, dann erzeugte Muster) | spielbar |
 | Farbbilder (Nonogramm mit 2–4 Farben, 15×15 bis 30×35) | spielbar |
-| Schraubwerk (Schrauben umsetzen, Teile pendeln und fallen; Löser prüft jedes Level) | spielbar |
+| Schraubwerk (Schrauben umsetzen, 6×8 bis 12×17 Löcher; Teile pendeln, stoßen an Schrauben, rutschen ab oder fallen; Löser prüft jedes Level) | spielbar |
 | Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren) | spielbar |
 
 ## Grundsätze (für alle Spiele)
@@ -24,7 +24,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `js/ui/shell.js` – gemeinsame Kopfleiste, Leben, Tipp-Knopf, Sieg-/Niederlage-Dialog
 - `js/games/<spiel>/generator.js` – erzeugt garantiert lösbare Level (ohne Browser testbar)
 - `js/games/<spiel>/game.js` – Darstellung und Bedienung
-- `js/games/screws/model.js` – Spielregeln/Geometrie von Schraubwerk (auch vom Löser genutzt)
+- `js/games/screws/model.js` – Spielregeln, Geometrie und Physik (Stifte, Pendeln, Fall-Simulation) von Schraubwerk, auch vom Löser genutzt; `worker.js` + `gen-client.js` erzeugen Level im Hintergrund (nächstes vorab, im Browser gespeichert)
 - `js/games/nonogram/motifs.js` – eigene Pixel-Motive (werden nur genutzt, wenn rein logisch lösbar)
 - `js/games/nonogram/color.js` – Farbbilder: Farb-Zeilenlöser und Generator (`node tools/test-nonogram-color.js`)
 - `js/games/tracks/worker.js` + `gen-client.js` – Gleisbau-Rätsel werden im Hintergrund erzeugt (nächstes Feld/Level schon vorab, im Browser gespeichert); `generator.js` enthält den logischen Löser (ohne Raten)

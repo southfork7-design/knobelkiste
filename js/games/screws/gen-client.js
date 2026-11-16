@@ -1,10 +1,31 @@
-// Holt Schraubwerk-Level und Tipps aus dem Hintergrundprozess.
-import { generateLevel } from './generator.js';
+// Holt Schraubwerk-Level und Tipps aus dem Hintergrundprozess. Fertige Level
+// werden zusätzlich im Browser abgelegt, damit das nächste Level auch nach
+// einem Neustart sofort da ist (große Bretter brauchen auf dem Handy einige Sekunden).
+import { generateLevel, VERSION } from './generator.js';
 import { solve } from './model.js';
+
+const STORE = 'knobelkiste-screws-cache';
+const KEEP = 4;
 
 let worker = null, nextId = 1;
 const waiting = new Map();
 const cache = new Map();
+
+function loadStore() {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || '{}');
+    return s.v === VERSION && s.items ? s : { v: VERSION, items: {} };
+  } catch { return { v: VERSION, items: {} }; }
+}
+function remember(key, result) {
+  try {
+    const s = loadStore();
+    s.items[key] = result;
+    const keys = Object.keys(s.items);
+    for (const k of keys.slice(0, Math.max(0, keys.length - KEEP))) delete s.items[k];
+    localStorage.setItem(STORE, JSON.stringify(s));
+  } catch {}
+}
 
 function getWorker() {
   if (worker === null) {
@@ -35,16 +56,16 @@ function call(type, args, fallback) {
 export function getLevel(level) {
   const key = `L${level}`;
   if (!cache.has(key)) {
-    const p = call('level', [level], () => generateLevel(level));
+    const stored = loadStore().items[key];
+    const p = stored ? Promise.resolve(stored) : call('level', [level], () => generateLevel(level));
     cache.set(key, p);
-    p.catch(() => cache.delete(key));
+    p.then((r) => { if (!stored) remember(key, r); }, () => cache.delete(key));
   }
   return cache.get(key);
 }
 
-export function getHint(level, state) {
-  return call('hint', [level, state], () => {
-    const r = solve(level, state, 15000);
-    return r && r.path ? { move: r.path[0] ?? null } : { move: null, unsolvable: !!r };
-  });
+export function hintMove(level, state) {
+  const r = solve(level, state, 2500);
+  return r ? { move: r.path[0] ?? null } : { move: null };
 }
+export const getHint = (level, state) => call('hint', [level, state], () => hintMove(level, state));
