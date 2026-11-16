@@ -402,3 +402,56 @@ button { font: inherit; color: inherit; }
   border: 3px solid var(--accent); border-radius: 4px; animation: pulse .9s ease-in-out infinite; }
 .traps-hint[hidden] { display: none; }
 .tool-btn.traps-no-hint { opacity: 0.4; cursor: default; }
+
+/* ---------- Kuschelfracht ---------- */
+.plush-wrap {
+  position: relative; display: flex; flex-direction: column; width: 100%; height: 100%;
+  --f6: #d9569b; --pl-stone: #b7b0a3; --pl-stone-edge: #8c8578; --pl-lock: #6d717b; --pl-lock-edge: #474a52;
+  --pl-snout: #fff4e6; --pl-eye: #2a2522;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .plush-wrap {
+    --pl-stone: #6e6a63; --pl-stone-edge: #4d4a45; --pl-lock: #8a909c; --pl-lock-edge: #5d636e;
+  }
+}
+:root[data-theme="dark"] .plush-wrap { --pl-stone: #6e6a63; --pl-stone-edge: #4d4a45; --pl-lock: #8a909c; --pl-lock-edge: #5d636e; }
+.plush-view { position: relative; flex: 1; min-height: 0; overflow: hidden; isolation: isolate; }
+.board.plush { position: absolute; inset: 0; touch-action: none; overflow: hidden; }
+.plush-fit {
+  position: absolute; right: 0; top: 0; z-index: 3; padding: 6px 10px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font-size: 13px; cursor: pointer;
+}
+.plush-fit[hidden] { display: none; }
+.plush-view .toast { top: 6px; bottom: auto; z-index: 3; }
+.tool-btn.plush-no-hint { opacity: 0.4; cursor: default; }
+.plush .tray { fill: var(--panel); stroke: var(--line); stroke-width: .4; }
+.plush .cell { fill: var(--ink); opacity: .05; }
+.plush .wall { fill: var(--pl-stone-edge); opacity: .55; }
+.plush .pl-body { stroke: rgba(0,0,0,.35); stroke-width: .04; }
+.plush .pl-ear { fill: var(--pl-snout); opacity: .55; }
+.plush .pl-snout { fill: var(--pl-snout); }
+.plush .pl-eye { fill: var(--pl-eye); }
+.plush .piece { cursor: grab; }
+.plush .piece .edge { fill: rgba(0,0,0,.42); }
+.plush .piece .face { opacity: 1; }
+.plush .piece.stone .edge { fill: var(--pl-stone-edge); }
+.plush .piece.stone .face { fill: var(--pl-stone); opacity: 1; }
+.plush .piece.stone .speck { fill: var(--pl-stone-edge); opacity: .6; }
+.plush .piece.locked { cursor: default; }
+.plush .piece.locked .edge { fill: var(--pl-lock-edge); }
+.plush .piece.locked .face { fill: var(--pl-lock); opacity: 1; }
+.plush .piece .shackle { fill: none; stroke: #e9e6df; stroke-width: .8; }
+.plush .piece .lockbody { fill: #e9e6df; }
+.plush .piece .locknum { font-size: 3px; font-weight: 700; fill: var(--pl-lock); text-anchor: middle; }
+.plush .piece .seat { fill: rgba(0,0,0,.24); stroke: rgba(255,255,255,.35); stroke-width: .35; }
+.plush .piece .axis { fill: none; stroke: #fff; stroke-opacity: .8; stroke-width: .55; stroke-linecap: round; }
+.plush .piece.hint { animation: pulse .9s ease-in-out infinite; }
+.plush .piece.wiggle { animation: blink .4s ease; }
+.plush .piece.leaving { pointer-events: none; }
+.plush .piece.opening .face { animation: fade .3s ease; }
+.plush .hint-ghost rect { fill: none; stroke: var(--ink); stroke-width: .7; stroke-dasharray: 1.6 1.1; opacity: .75; }
+.plush .hint-path { fill: none; stroke: var(--ink); stroke-width: .6; stroke-dasharray: .1 1.6; stroke-linecap: round; opacity: .6; }
+.plush .room-box { fill: var(--surface); stroke: var(--muted); stroke-width: .5; }
+.plush .room-door { stroke: var(--surface); stroke-width: 1.2; }
+.plush .room-dot { stroke: rgba(0,0,0,.3); stroke-width: .2; }
+.plush .room-count { font-size: 2.6px; font-weight: 700; fill: var(--muted); text-anchor: middle; }
