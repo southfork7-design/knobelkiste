@@ -1,5 +1,6 @@
 // Kronenfeld: Spielfeld und Bedienung.
-// Tippen: Kreuz an/aus. Doppeltippen: Krone an/aus. Ziehen über Felder: Kreuze setzen
+// Tippen: Kreuz an/aus. Doppeltippen: Krone an/aus (eine regelkonforme Krone kreuzt
+// Nachbarfelder und volle Zeilen/Spalten/Farbflächen selbst an). Ziehen über Felder: Kreuze setzen
 // (oder löschen, wenn man auf einem Kreuz beginnt). Zwei Finger: zoomen und
 // verschieben, Mausrad am Computer.
 import { generateLevel } from './generator.js';
@@ -158,9 +159,32 @@ export function mountCrowns(root, { level, onWin, onExit }) {
       sound.bump();
       shell.vibrate([30, 40, 30]);
       if (lives <= 0) { lose(); return; }
-    } else if (step.some(([, , to]) => to === CROWN)) sound.click();
-    else sound.tick();
+    } else if (step.some(([, , to]) => to === CROWN)) {
+      autoMarks(step);
+      sound.click();
+    } else sound.tick();
     if (count === n * k && bad.size === 0) win();
+  }
+
+  // Nach einer regelkonformen Krone: Nachbarfelder ankreuzen, dazu die ganze Zeile,
+  // Spalte bzw. Farbfläche, sobald sie ihre k Kronen hat. Gehört zum selben
+  // Rückgängig-Schritt wie die Krone.
+  function autoMarks(step) {
+    const cnt = (f) => { let s = 0; for (let j = 0; j < N; j++) if (state[j] === CROWN && f(j)) s++; return s; };
+    const add = new Set();
+    for (const [i, , to] of step) {
+      if (to !== CROWN) continue;
+      const r = Math.floor(i / n), c = i % n;
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && cc >= 0 && rr < n && cc < n) add.add(rr * n + cc);
+        }
+      const groups = [(j) => Math.floor(j / n) === r, (j) => j % n === c, (j) => reg[j] === reg[i]];
+      for (const f of groups) if (cnt(f) >= k) for (let j = 0; j < N; j++) if (f(j)) add.add(j);
+    }
+    for (const j of add) if (state[j] === EMPTY) { step.push([j, EMPTY, MARK]); state[j] = MARK; }
+    render();
   }
 
   function undo() {
