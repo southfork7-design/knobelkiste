@@ -409,7 +409,7 @@ button { font: inherit; color: inherit; }
 /* ---------- Kuschelfracht ---------- */
 .plush-wrap {
   position: relative; display: flex; flex-direction: column; width: 100%; height: 100%;
-  --f6: #d9569b; --pl-stone: #b7b0a3; --pl-stone-edge: #8c8578; --pl-lock: #6d717b; --pl-lock-edge: #474a52;
+  --f6: #d9569b; --f7: #1aa3a0; --f8: #8a5a2e; --pl-stone: #b7b0a3; --pl-stone-edge: #8c8578; --pl-lock: #6d717b; --pl-lock-edge: #474a52;
   --pl-snout: #fff4e6; --pl-eye: #2a2522;
 }
 @media (prefers-color-scheme: dark) {

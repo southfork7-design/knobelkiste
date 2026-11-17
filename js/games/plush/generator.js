@@ -10,7 +10,7 @@
 import { mulberry32, shuffle, randInt } from '../../rng.js';
 import { SHAPES, prep, cellsAt, initialState, occupancy, touches, reach, pathTo, applyMove, isWon } from './model.js';
 
-export const VERSION = 2;
+export const VERSION = 3;
 
 export function levelParams(level) {
   const t = Math.min(1, (level - 1) / 39);
@@ -18,7 +18,7 @@ export function levelParams(level) {
   const rows = Math.round(cols * 1.6);
   return {
     cols, rows,
-    colors: Math.min(7, 3 + Math.floor((level + 2) / 6)),
+    colors: level < 16 ? 6 : level < 31 ? 7 : 8,   // mindestens 6 Farben (Wunsch), später 7 und 8
     maxSize: level < 3 ? 3 : level < 7 ? 4 : 5,
     rooms: level < 3 ? 0 : Math.min(5, 1 + Math.floor((level - 3) / 6)),
     greys: level < 6 ? 0 : Math.min(8, 1 + Math.floor((level - 6) / 4)),
