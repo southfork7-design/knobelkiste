@@ -8,7 +8,7 @@
 import { generateLevel, generateRoutePanel, VERSION } from './generator.js';
 
 const STORE = 'knobelkiste-tracks-cache';
-const CACHE_V = VERSION + '.3'; // bei geänderter Rätselauswahl hochzählen
+const CACHE_V = VERSION + '.4'; // bei geänderter Rätselauswahl hochzählen
 const KEEP = 8; // so viele Rätsel bleiben gespeichert
 const TIMEOUT = 40000; // ms, danach gilt der Hintergrundprozess als hängend
 

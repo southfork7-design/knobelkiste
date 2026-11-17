@@ -300,6 +300,16 @@ function randomPath(W, H, rnd, blocked, { start, startOut, endSides, fill }) {
   for (const i of path) inPath[i] = 1;
   const free = N - blocked.reduce((a, b) => a + b, 0);
   const target = Math.round(free * fill);
+  const touches = (i, x, y) => {
+    const r = Math.floor(i / W), c = i % W;
+    for (let d = 0; d < 4; d++) {
+      const nr = r + DR[d], nc = c + DC[d];
+      if (nr < 0 || nc < 0 || nr >= H || nc >= W) continue;
+      const j = nr * W + nc;
+      if (j !== x && j !== y && inPath[j]) return true;
+    }
+    return false;
+  };
   let fails = 0;
   while (path.length < target && fails < 4000) {
     const k = Math.floor(rnd() * (path.length - 1));
@@ -311,6 +321,8 @@ function randomPath(W, H, rnd, blocked, { start, startOut, endSides, fill }) {
     if (ar < 0 || ac < 0 || ar >= H || ac >= W || br < 0 || bc < 0 || br >= H || bc >= W) { fails++; continue; }
     const a2 = ar * W + ac, b2 = br * W + bc;
     if (blocked[a2] || blocked[b2] || inPath[a2] || inPath[b2]) { fails++; continue; }
+    // lockere Strecke: neue Felder sollen möglichst nicht an andere Gleise grenzen
+    if (rnd() < 0.9 && (touches(a2, a, b2) || touches(b2, b, a2))) { fails++; continue; }
     path.splice(k + 1, 0, a2, b2);
     inPath[a2] = inPath[b2] = 1;
     fails = 0;
@@ -334,7 +346,7 @@ export function generatePuzzle(W, H, rnd, { startSide, startPos = null, endSides
     const pos = startPos ?? Math.floor(rnd() * sideLen(W, H, startSide));
     const start = sideCell(W, H, startSide, pos);
     const blocked = rocks ? makeRocks(W, H, rnd, new Set([start])) : new Uint8Array(W * H);
-    const P = randomPath(W, H, rnd, blocked, { start, startOut: startSide, endSides, fill: 0.5 + rnd() * 0.12 });
+    const P = randomPath(W, H, rnd, blocked, { start, startOut: startSide, endSides, fill: 0.34 + rnd() * 0.08 });
     if (!P) continue;
     const rowC = new Array(H).fill(0), colC = new Array(W).fill(0);
     for (const i of P.cells) { rowC[Math.floor(i / W)]++; colC[i % W]++; }

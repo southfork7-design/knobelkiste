@@ -5,8 +5,8 @@
 // einem Gleisfeld aus: benachbarte, schon gesetzte Gleise verbinden (leere
 // Felder bleiben leer; über ein Gleis zurückziehen entfernt die Verbindung). Zwei Finger: zoomen und verschieben,
 // Mausrad am Computer. Die Zahlen bleiben beim Zoomen am Rand stehen.
-// 3 Herzen: Ein sichtbarer Regelverstoß (Zeile/Spalte über der Zahl,
-// geschlossener Ring) und jeder Tipp kosten ein Herz.
+// 3 Herzen: Ein falsch gesetztes Gleis (Feld oder Verbindung, die nicht zur Lösung
+// gehört – wird rot), ein Regelverstoß und jeder Tipp kosten ein Herz.
 import { DR, DC, bit, opp, routeParams, nextEntry, VERSION } from './generator.js';
 import { getLevel, getRoutePanel } from './gen-client.js';
 import { el, bits, cellPath, trackLayer, overviewSVG, routePath, rocksPath } from './draw.js';
@@ -159,6 +159,7 @@ function mountBoard(root, L, { name, label, level, onExit, onSolved }) {
   const ghost = el('path', { class: 'ghost' });
   const drawGiven = trackLayer(grid, 'track given');
   const drawCross = trackLayer(grid, 'track player cross');
+  const drawBadCross = trackLayer(grid, 'track bad cross');
   const drawPlayer = trackLayer(grid, 'track player');
   const drawBad = trackLayer(grid, 'track bad');
   const drawDone = trackLayer(grid, 'track done');
@@ -202,25 +203,30 @@ function mountBoard(root, L, { name, label, level, onExit, onSolved }) {
     }
     return { overRow, overCol, ring };
   }
-  const violCount = (v) => v.overRow.size + v.overCol.size + (v.ring.size ? 1 : 0);
+  // Falsch gesetzt: Gleis auf einem Feld ohne Gleis in der Lösung oder eine
+  // Verbindung, die es in der Lösung nicht gibt – wird sofort als Fehler gewertet.
+  const isWrong = (i) => !isGiven(i) && hasTrack(i) && (!solution[i] || (conn[i] & ~solution[i]));
+  const wrongCount = () => { let n = 0; for (let i = 0; i < N; i++) if (isWrong(i)) n++; return n; };
+  const violCount = (v) => v.overRow.size + v.overCol.size + (v.ring.size ? 1 : 0) + wrongCount();
 
   function render() {
-    let dg = '', dp = '', db = '', dx = '', dc = '';
+    let dg = '', dp = '', db = '', dx = '', dc = '', dbc = '';
     const v = violations();
     for (let i = 0; i < N; i++) {
       if (isGiven(i)) dg += cellPath(W, i, conn[i], C, extendFor(i));
       else if (conn[i]) {
         const p = cellPath(W, i, conn[i], C, extendFor(i));
-        if (v.ring.has(i)) db += p; else dp += p;
+        if (v.ring.has(i) || isWrong(i)) db += p; else dp += p;
       } else if (tmark[i]) {
         const x = (i % W) * C + C / 2, y = Math.floor(i / W) * C + C / 2, s = C * 0.36;
-        dc += `M${x - s} ${y} H${x + s} M${x} ${y - s} V${y + s} `;
+        const p = `M${x - s} ${y} H${x + s} M${x} ${y - s} V${y + s} `;
+        if (isWrong(i)) dbc += p; else dc += p;
       } else if (xmark[i]) {
         const x = (i % W) * C + C / 2, y = Math.floor(i / W) * C + C / 2, s = 1.3;
         dx += `M${x - s} ${y - s} L${x + s} ${y + s} M${x + s} ${y - s} L${x - s} ${y + s} `;
       }
     }
-    drawGiven(dg); drawCross(dc); drawPlayer(dp); drawBad(db); marks.setAttribute('d', dx);
+    drawGiven(dg); drawCross(dc); drawBadCross(dbc); drawPlayer(dp); drawBad(db); marks.setAttribute('d', dx);
     // Zahlen: erfüllt → blass, zu viele → rot
     const ru = new Array(H).fill(0), cu = new Array(W).fill(0);
     for (let i = 0; i < N; i++) if (hasTrack(i)) { ru[Math.floor(i / W)]++; cu[i % W]++; }
@@ -249,7 +255,7 @@ function mountBoard(root, L, { name, label, level, onExit, onSolved }) {
     const v = render();
     if (!changed) return;
     if (violCount(v) > before.viol) {
-      // sichtbarer Regelverstoß: kostet ein Herz
+      // falsch gesetztes Gleis oder Regelverstoß: kostet ein Herz
       lives--; mistakes++;
       updateHud();
       sound.bump();
