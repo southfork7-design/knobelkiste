@@ -8,7 +8,7 @@
 // und wird zurückgenommen; jeder Tipp kostet ein Herz (nicht mit dem letzten).
 // Der Stand im laufenden Level wird im Browser gespeichert (Neuladen, Menü);
 // „Neu“, „Nochmal“, Lösen und das nächste Level verwerfen ihn.
-import { initialState, legalMoves, applyMove, screwBlocked, targetFree, isWon } from './model.js';
+import { initialState, legalMoves, applyMove, screwBlocked, targetFree, isWon, toWorld } from './model.js';
 import { getLevel, getHint } from './gen-client.js';
 import { createShell, timeText, mistakesText } from '../../ui/shell.js';
 import { sound } from '../../ui/sound.js';
@@ -65,14 +65,15 @@ function play(root, L, { level, onWin, onExit }) {
 
   const px = ([x, y]) => [(x + PAD) * S, (y + PAD) * S];
 
+  const uid = Math.random().toString(36).slice(2, 8);
+  const defs = el('defs'); svg.appendChild(defs);
   // Brett mit Löchern
   svg.appendChild(el('rect', { x: 0, y: 0, width: W, height: H, rx: 4, class: 'panel' }));
-  const holeEls = L.holes.map((h) => {
+  L.holes.forEach((h) => {
     const [x, y] = px(h);
     const g = el('g', { class: 'hole' });
     g.append(el('circle', { cx: x, cy: y, r: 2.4, class: 'hole-ring' }), el('circle', { cx: x, cy: y, r: 1.7, class: 'hole-in' }));
     svg.appendChild(g);
-    return g;
   });
 
   // Ebenen: je Teil eine Gruppe, darüber die Schrauben, deren oberstes Teil es ist
@@ -81,12 +82,28 @@ function play(root, L, { level, onWin, onExit }) {
     const g = el('g', { class: 'plate' });
     g.style.setProperty('--c', `var(${PALETTE[i % PALETTE.length]})`);
     const d = 'M' + pl.points.map(([x, y]) => `${x * S} ${y * S}`).join(' L');
-    g.append(el('path', { d, class: 'plate-edge' }), el('path', { d, class: 'plate-body' }));
+    // Löcher sind echte Aussparungen: man sieht, was darunter liegt
+    const mid = `screws-m${i}-${uid}`;
+    const mask = el('mask', { id: mid, maskUnits: 'userSpaceOnUse', x: -1e4, y: -1e4, width: 2e4, height: 2e4 });
+    mask.append(el('rect', { x: -1e4, y: -1e4, width: 2e4, height: 2e4, fill: '#fff' }));
+    for (const [x, y] of pl.holes) mask.append(el('circle', { cx: x * S, cy: y * S, r: 1.7, fill: '#000' }));
+    defs.appendChild(mask);
+    const body = el('g', { mask: `url(#${mid})` });
+    body.append(el('path', { d, class: 'plate-edge' }), el('path', { d, class: 'plate-body' }));
+    g.appendChild(body);
     for (const [x, y] of pl.holes) g.appendChild(el('circle', { cx: x * S, cy: y * S, r: 1.7, class: 'plate-hole' }));
     const wrap = el('g');
     wrap.append(g, el('g', { class: 'screw-slot' }));
     svg.appendChild(wrap);
     return { wrap, g, screwsG: wrap.lastChild };
+  });
+  // Markierungen freier Ziellöcher liegen über allen Teilen
+  const marks = el('g', { class: 'marks' }); svg.appendChild(marks);
+  const markEls = L.holes.map((h) => {
+    const [x, y] = px(h);
+    const c = el('circle', { cx: x, cy: y, r: 2.9, class: 'target-mark' });
+    marks.appendChild(c);
+    return c;
   });
   const top = el('g'); svg.appendChild(top); // angehobene Schraube
   const screwEls = s.screws.map(() => {
@@ -126,7 +143,7 @@ function play(root, L, { level, onWin, onExit }) {
       if (e.parentNode !== parent) parent.appendChild(e);
     });
     // mögliche Ziele zeigen
-    holeEls.forEach((g, hi) => g.classList.toggle('target', selected >= 0 && targetFree(L, s, hi)));
+    markEls.forEach((c, hi) => c.classList.toggle('target', selected >= 0 && targetFree(L, s, hi)));
     const left = s.poses.filter(Boolean).length;
     shell.setCounter(`${left} Teil${left === 1 ? '' : 'e'} übrig`);
   }
@@ -244,8 +261,18 @@ function play(root, L, { level, onWin, onExit }) {
     if (selected < 0) return;
     let hi = -1, hd = 0.48;
     L.holes.forEach((h, k) => { const d = near(h); if (d < hd) { hd = d; hi = k; } });
-    if (hi < 0) { selected = -1; render(); return; }
-    if (!targetFree(L, s, hi)) { sound.bump(); return; }
+    if (hi < 0) {
+      // Loch in einem Teil, aber keins im Brett darunter?
+      const inPlate = L.plates.some((pl) => s.poses[pl.id] &&
+        pl.holes.some((h) => { const w = toWorld(s.poses[pl.id], h); return Math.hypot(w[0] - x, w[1] - y) < 0.48; }));
+      if (inPlate) { sound.bump(); showToast('Darunter ist kein Loch im Brett.'); return; }
+      selected = -1; render(); return;
+    }
+    if (!targetFree(L, s, hi)) {
+      sound.bump();
+      showToast(s.screws.includes(hi) ? 'Dort steckt schon eine Schraube.' : 'Darunter liegt ein Teil ohne Loch.');
+      return;
+    }
     await doMove([selected, hi]);
   }
 
@@ -307,10 +334,11 @@ function play(root, L, { level, onWin, onExit }) {
     history.push(prev);
     selected = -1;
     clearHint();
-    holeEls.forEach((g) => g.classList.remove('target'));
+    markEls.forEach((c) => c.classList.remove('target'));
     s = next;
     moves++;
-    await animateMove(prev, next, m[0], rec);
+    // Eine gestörte Animation darf das Spiel nie sperren
+    try { await animateMove(prev, next, m[0], rec); } catch {}
     if (!svg.isConnected) return;
     render();
     busy = false;
@@ -367,7 +395,10 @@ function play(root, L, { level, onWin, onExit }) {
     busy = true;
     showToast('Suche …', 6000);
     const snapshot = s;
-    const res = await getHint(L, s);
+    let res;
+    try {
+      res = await Promise.race([getHint(L, s), new Promise((r) => setTimeout(() => r({ move: null }), 20000))]);
+    } catch { res = { move: null }; }
     busy = false;
     if (!svg.isConnected || s !== snapshot || over) return;
     if (!res.move) { showToast('Kein Tipp gefunden – Rückgängig hilft vielleicht.', 3000); return; }
@@ -378,7 +409,7 @@ function play(root, L, { level, onWin, onExit }) {
     const [i, hi] = res.move;
     selected = -1;
     render();
-    hintEls = [screwEls[i], holeEls[hi]];
+    hintEls = [screwEls[i], markEls[hi]];
     hintEls.forEach((x) => x.classList.add('hint'));
     hintQ = L.holes[s.screws[i]];
     reveal(hintQ);

@@ -317,15 +317,18 @@ button { font: inherit; color: inherit; }
 .screws .panel { fill: var(--panel); stroke: var(--line); stroke-width: .6; }
 .screws .hole-ring { fill: var(--surface); opacity: .55; }
 .screws .hole-in { fill: var(--ink); opacity: .55; }
-.screws .hole.target .hole-ring { fill: var(--accent); opacity: .55; animation: pulse 1.2s ease-in-out infinite; }
+.screws .target-mark { fill: var(--accent); fill-opacity: .55; stroke: var(--ink); stroke-width: 1.1; opacity: 0; pointer-events: none; }
+.screws .target-mark.target { opacity: 1; animation: pulse 1.2s ease-in-out infinite; }
 .screws .plate-edge { fill: none; stroke: var(--ink); stroke-opacity: .55; stroke-width: 9.2; stroke-linecap: round; stroke-linejoin: round; }
 .screws .plate-body { fill: none; stroke: var(--c); stroke-opacity: .88; stroke-width: 8.2; stroke-linecap: round; stroke-linejoin: round; }
-.screws .plate-hole { fill: var(--panel); stroke: var(--ink); stroke-opacity: .35; stroke-width: .4; }
+.screws .plate-hole { fill: none; stroke: var(--ink); stroke-opacity: .45; stroke-width: .4; }
 .screws .screw-head { fill: var(--screw); stroke: var(--screw-edge); stroke-width: .7; }
 .screws .screw-slot-mark { stroke: var(--screw-edge); stroke-width: .8; stroke-linecap: round; }
-.screws .screw.selected .screw-head { fill: var(--accent); stroke: var(--ink); filter: drop-shadow(0 1.5px 1px rgba(0,0,0,.35)); }
+.screws .screw.selected .screw-head { fill: var(--accent); stroke: var(--surface); stroke-width: 1.1; filter: drop-shadow(0 1.5px 1px rgba(0,0,0,.45)); }
+.screws .screw.selected .screw-slot-mark { stroke: var(--surface); }
 .screws .screw.selected { transform-box: fill-box; }
-.screws .screw.hint .screw-head, .screws .hole.hint .hole-ring { fill: var(--accent); opacity: 1; animation: pulse .9s ease-in-out infinite; }
+.screws .screw.hint .screw-head { fill: var(--accent); opacity: 1; animation: pulse .9s ease-in-out infinite; }
+.screws .target-mark.hint { opacity: 1; fill: var(--accent); fill-opacity: .35; animation: pulse .9s ease-in-out infinite; }
 .screws .screw.wiggle .screw-head { animation: wiggle .35s ease; transform-box: fill-box; transform-origin: center; }
 @keyframes wiggle { 25% { transform: translateX(-.8px); } 75% { transform: translateX(.8px); } }
 .board-wrap { position: relative; }
