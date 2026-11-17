@@ -1,8 +1,9 @@
 // Fallenfeld: Spielfeld und Bedienung (Canvas, weil bis zu 50×50 Felder).
-// Tippen: Markierung an/aus. Doppeltippen: Feld aufdecken (markierte Felder sind
-// geschützt); Doppeltippen auf eine Zahl mit vollständig markierten Nachbarn deckt den
+// Tippen wechselt: leer → Vermutung (harmlos) → Fahne → leer. Doppeltippen: Feld
+// aufdecken (Fahnen sind geschützt, Vermutungen nicht); Doppeltippen auf eine Zahl mit vollständig markierten Nachbarn deckt den
 // Rest auf. Zwei Finger: zoomen; ein Finger verschiebt, wenn hineingezoomt.
-// Herzen: aufgedeckte Falle, zu viele Markierungen an einer Zahl, Tipp (nicht beim letzten).
+// Herzen: aufgedeckte Falle, zu viele Fahnen an einer Zahl, Tipp (nicht beim letzten).
+// Vermutungen kosten nie ein Herz und zählen nirgends mit.
 import { generateLevel, makeGrid, logicSolve } from './generator.js';
 import { createShell, timeText, mistakesText } from '../../ui/shell.js';
 import { sound } from '../../ui/sound.js';
@@ -12,9 +13,10 @@ const MAX_S = 48;            // höchstens so viele Pixel je Feld beim Zoomen
 const START_S = 30;          // große Felder beginnen hineingezoomt am Startbereich
 const DOUBLE_MS = 350;
 const SAVE_KEY = 'knobelkiste-traps-stand';
-const COVER = 0, FLAG = 1, OPEN = 2, BOOM = 3;
+const COVER = 0, FLAG = 1, OPEN = 2, BOOM = 3, MAYBE = 4;
+const covered = (v) => v === COVER || v === MAYBE;
 const RULES = 'Jede Zahl zeigt, wie viele Fallen in ihren 8 Nachbarfeldern liegen. ' +
-  'Tippen markiert eine Falle, Doppeltippen deckt ein Feld auf.';
+  'Tippen: Vermutung, zweimal Tippen: Fahne. Doppeltippen deckt ein Feld auf.';
 
 export function mountTraps(root, { level, onWin, onExit }) {
   const L = generateLevel(level);
@@ -121,7 +123,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
       lastTap = null;
       clearTimeout(checkTimer);
       st[i] = from;
-      if (from === COVER) {
+      if (covered(from)) {
         afterChange({ booms: open([i]) });
       } else if (from === OPEN) {
         chord(i);
@@ -130,13 +132,17 @@ export function mountTraps(root, { level, onWin, onExit }) {
         draw();
         saveState();
         sound.tick();
-        say('Markiert – erst Markierung entfernen');
+        say('Fahne – erst Fahne entfernen');
       }
       return;
     }
     const from = st[i];
     lastTap = { i, t: now, from };
     if (from === COVER) {
+      st[i] = MAYBE;
+      sound.tick();
+      afterChange({ quiet: true });
+    } else if (from === MAYBE) {
       badBefore = badSet();
       st[i] = FLAG;
       sound.tick();
@@ -149,9 +155,9 @@ export function mountTraps(root, { level, onWin, onExit }) {
   }
   function chord(i) {
     if (num[i] === 0) return;
-    const rest = nb[i].filter((j) => st[j] === COVER);
+    const rest = nb[i].filter((j) => covered(st[j]));
     if (!rest.length) return;
-    if (flagsAround(i) !== num[i]) { sound.bump(); say(`Erst ${num[i]} ${num[i] === 1 ? 'Falle' : 'Fallen'} markieren`); return; }
+    if (flagsAround(i) !== num[i]) { sound.bump(); say(`Erst ${num[i]} ${num[i] === 1 ? 'Fahne' : 'Fahnen'} setzen`); return; }
     // mehrere Fallen auf einmal kosten nur ein Herz
     afterChange({ booms: Math.min(1, open(rest)) });
   }
@@ -220,6 +226,19 @@ export function mountTraps(root, { level, onWin, onExit }) {
     ctx.fill();
   }
 
+  // Vermutung: nur ein umrissener Wimpel ohne Stange
+  function maybeShape(x, y, s) {
+    ctx.strokeStyle = colors.flag;
+    ctx.lineWidth = Math.max(1, s * 0.07);
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x + s * 0.34, y + s * 0.26);
+    ctx.lineTo(x + s * 0.72, y + s * 0.44);
+    ctx.lineTo(x + s * 0.34, y + s * 0.62);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
   function draw() {
     if (!cv.isConnected) return;
     readColors();
@@ -276,6 +295,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
               ctx.stroke();
             } else flagShape(x, y, s);
           } else if (showAll && mines[i]) trapShape(x + s / 2, y + s / 2, s * 0.28, colors.trap);
+          else if (v === MAYBE) maybeShape(x, y, s);
         }
       }
     placeHint();
@@ -381,7 +401,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
       const known = new Int8Array(N);
       for (let x = 0; x < N; x++) known[x] = st[x] === OPEN ? 0 : st[x] === BOOM ? 1 : -1;
       const res = logicSolve(g, num, known, total, { reveal: false, record: true });
-      const step = res.steps.find((p) => st[p.i] === COVER) || res.steps.find((p) => p.mine && st[p.i] !== FLAG);
+      const step = res.steps.find((p) => covered(st[p.i])) || res.steps.find((p) => p.mine && st[p.i] !== FLAG);
       if (step) { i = step.i; text = step.mine ? 'Hier liegt eine Falle' : 'Dieses Feld ist frei'; }
     }
     if (i < 0) { say('Kein Tipp gefunden'); return; }
@@ -412,7 +432,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
     clearSave();
     clearInterval(timer);
     clearHint();
-    for (let i = 0; i < N; i++) if (mines[i] && st[i] === COVER) st[i] = FLAG;
+    for (let i = 0; i < N; i++) if (mines[i] && covered(st[i])) st[i] = FLAG;
     shell.setCounter(`0 ✦ · ${timeText(performance.now() - t0).replace(' min', '')}`);
     view.classList.add('solved');
     draw();
@@ -445,7 +465,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
   try {
     const sv = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (sv && sv.level === level && sv.sig === sig && sv.lives > 0 && sv.st.length === N) {
-      for (let i = 0; i < N; i++) st[i] = Number(sv.st[i]) & 3;
+      for (let i = 0; i < N; i++) st[i] = Number(sv.st[i]) & 7;
       lives = sv.lives; hints = sv.hints; mistakes = sv.mistakes;
       t0 = performance.now() - sv.time;
       restored = true;
