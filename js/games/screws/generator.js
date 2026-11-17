@@ -1,19 +1,37 @@
 // Schraubwerk – Level-Generator. Jedes Level wird mit dem Löser geprüft.
 import { mulberry32, randInt, shuffle } from '../../rng.js';
-export const VERSION = 4; // bei Änderungen am Generator hochzählen (gespeicherte Level verwerfen)
+export const VERSION = 5; // bei Änderungen am Generator hochzählen (gespeicherte Level verwerfen)
 
-import { covers, hasHoleAt, initialState, solve, legalMoves, screwBlocked } from './model.js';
+import { covers, hasHoleAt, initialState, solve, legalMoves, screwBlocked, applyMove } from './model.js';
+
+// Probespiel: zufällige Züge mit Schrauben, die ein Teil halten. Wer so spielt,
+// soll nicht schon in den ersten Zügen in einer Sackgasse landen.
+function earlyDeadEnd(L, s0, rnd, runs = 4, depth = 15) {
+  for (let r = 0; r < runs; r++) {
+    let s = s0;
+    for (let n = 0; n < depth; n++) {
+      const lm = legalMoves(L, s);
+      if (!lm.length) return true;
+      if (s.poses.every((p) => !p)) break;
+      const useful = lm.filter(([i]) => s.pins[i].some((id) => s.poses[id]));
+      const pool = useful.length ? useful : lm;
+      s = applyMove(L, s, pool[Math.floor(rnd() * pool.length)]);
+    }
+  }
+  return false;
+}
 
 // Bretter wachsen von 6×8 bis 12×18 Löchern (hochkant); die Teile liegen
-// dicht in vielen Ebenen übereinander, freie Löcher sind knapp.
+// dicht in vielen Ebenen übereinander. Freie Löcher sind knapp, aber nie so knapp,
+// dass ein Zug abseits der Lösung gleich in die Sackgasse führt.
 export function levelParams(level) {
   const cols = Math.min(12, 6 + Math.floor((level - 1) / 4));
   const rows = Math.min(18, Math.round(cols * 1.45));
   return {
     cols, rows,
     plates: Math.round(cols * rows * (level <= 3 ? 0.3 : 0.4)),
-    extraHoles: level <= 4 ? 3 : 2,
-    hidden: Math.round(cols * rows * 0.06),
+    holeShare: 0.35,
+    minFree: Math.max(5, Math.round(cols * rows * 0.06)),
     hideScrews: level <= 3 ? 0.3 : 0.6,
     seed: level * 8191 + 1237,
   };
@@ -120,12 +138,17 @@ function buildLevel(params, rnd) {
       const ok = plates.every((pl) => !covers(pl, ident, q) || hasHoleAt(pl, ident, q));
       if (ok) cand.push(q);
     }
+  // Brettlöcher an gut einem Drittel der übrigen Rasterpunkte, davon einige sofort frei.
+  // (Mit nur wenigen freien Löchern führte fast jeder Zug abseits der Lösung in eine Sackgasse.)
   shuffle(cand, rnd);
-  holes.push(...cand.slice(0, params.extraHoles));
-  // Weitere Brettlöcher unter Teilen – werden erst später frei
-  const more = [];
-  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) more.push([x, y]);
-  for (const q of shuffle(more, rnd).slice(0, params.hidden)) if (!holes.some((h) => h[0] === q[0] && h[1] === q[1])) holes.push(q);
+  const start = cand.slice(0, params.minFree);
+  const taken = new Set(start.map((q) => q.join(':')));
+  holes.push(...start);
+  for (let y = 0; y < rows; y++)
+    for (let x = 0; x < cols; x++) {
+      const k = `${x}:${y}`;
+      if (!screwPts.has(k) && !taken.has(k) && rnd() < params.holeShare) holes.push([x, y]);
+    }
   return {
     cols, rows, plates, holes,
     screws: holes.map((h, i) => (screwPts.has(h.join(':')) ? i : -1)).filter((i) => i >= 0),
@@ -135,7 +158,7 @@ function buildLevel(params, rnd) {
 export function generateLevel(level) {
   const params = levelParams(level);
   const rnd = mulberry32(params.seed);
-  let best = null;
+  let best = null, fallback = null;
   for (let attempt = 1; attempt <= 40; attempt++) {
     const L = buildLevel(params, rnd);
     const s0 = initialState(L);
@@ -143,11 +166,12 @@ export function generateLevel(level) {
     if (legalMoves(L, s0).length === 0) continue;
     const res = solve(L, s0, 4000);
     if (!res || !res.path) continue;
+    if (earlyDeadEnd(L, s0, rnd)) { fallback ||= { ...L, solution: res.path, score: 0, attempts: attempt }; continue; }
     // Bevorzugt: viele verdeckte Schrauben (Reihenfolge wird wichtig), lange Lösung
     const covered = s0.screws.filter((_, i) => screwBlocked(L, s0, i)).length;
     const score = res.path.length + covered * 3;
     if (!best || score > best.score) best = { ...L, solution: res.path, score, attempts: attempt };
     if (best && attempt >= 3) break;
   }
-  return { ...best, level };
+  return { ...(best || fallback), level };
 }
