@@ -34,7 +34,7 @@ export async function mountTracks(root, { level, onWin, onExit }) {
   if (root.dataset.mount !== token) return; // inzwischen verlassen
   getLevel(level + 1); // nächstes Level schon vorbereiten
   mountBoard(root, L, {
-    name: 'Gleisbau', label: `Level ${level}`, level, onExit,
+    name: 'Gleisbau', label: `Level ${level} · ${L.W}×${L.H}`, level, onExit,
     onSolved(details, shell) {
       shell.win(details);
       onWin && onWin(level);
@@ -78,7 +78,7 @@ export async function mountTrackRoute(root, { rs, save, onExit, intro = true }) 
   if (k + 1 < R.count) getRoutePanel(rs.route, k + 1, nextEntry(panel));
 
   mountBoard(root, panel, {
-    name: 'Großstrecke', label, onExit,
+    name: 'Großstrecke', label: `Strecke ${rs.route} · ${k + 1}/${R.count} · ${panel.W}×${panel.H}`, onExit,
     onSolved(details, sh) {
       rs.done = k + 1;
       const last = rs.done === R.count;
@@ -144,6 +144,10 @@ function mountBoard(root, L, { name, label, level, onExit, onSolved }) {
   const rocks = rocksPath({ W, blocked }, C);
   grid.appendChild(el('path', { d: rocks.base, class: 'rock' }));
   grid.appendChild(el('path', { d: rocks.stones, class: 'stone' }));
+  // Vorgegebene Gleise grau unterlegt (lassen sich nicht ändern)
+  let gbg = '';
+  for (let i = 0; i < N; i++) if (isGiven(i)) gbg += `M${(i % W) * C} ${Math.floor(i / W) * C}h${C}v${C}h${-C}Z`;
+  grid.appendChild(el('path', { d: gbg, class: 'given-bg' }));
   const hintRect = el('rect', { width: C, height: C, class: 'hint-cell', visibility: 'hidden' });
   grid.appendChild(hintRect);
   let lines = '';
@@ -483,8 +487,9 @@ function mountBoard(root, L, { name, label, level, onExit, onSolved }) {
     xmark[i] = drag.kind === 'x' ? 1 : 0;
   }
 
-  // Tippen: Kreuz an/aus (auf Gleisen nichts). Doppeltippen: Gleis setzen bzw.
-  // entfernen – der erste Tipp wird dabei zurückgenommen.
+  // Tippen: Kreuz an/aus (auf Gleisen nichts). Doppeltippen: leeres Feld → Kreuzungsgleis,
+  // verbundenes Gleis → wieder Kreuzungsgleis (Verbindungen gelöst), Kreuzungsgleis → leer.
+  // Der erste Tipp wird dabei zurückgenommen.
   let lastTap = null;
   function tap(i) {
     if (isGiven(i) || blocked[i]) return;
@@ -493,7 +498,8 @@ function mountBoard(root, L, { name, label, level, onExit, onSolved }) {
       if (lastTap.step && undoStack[undoStack.length - 1] === lastTap.step) restore(undoStack.pop());
       lastTap = null;
       begin();
-      if (hasTrack(i)) clearCell(i);
+      if (conn[i]) { clearCell(i); tmark[i] = 1; }
+      else if (tmark[i]) tmark[i] = 0;
       else { xmark[i] = 0; tmark[i] = 1; }
       commit(sound.click);
       return;

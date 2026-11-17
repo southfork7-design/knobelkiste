@@ -346,6 +346,19 @@ export function generatePuzzle(W, H, rnd, { startSide, startPos = null, endSides
     const puz = { W, H, rowC, colC, given, blocked: Array.from(blocked),
       start: P.start, startOut: P.startOut, end: P.end, endOut: P.endOut };
     const G = geometry(W, H);
+    // Vorgaben sollen möglichst einzeln liegen, nicht als schon verbundene Stücke
+    const touchesGiven = (i) => [0, 1, 2, 3].some((d) => {
+      if (!(P.mask[i] & bit(d))) return false;
+      const r = Math.floor(i / W) + DR[d], c = (i % W) + DC[d];
+      return r >= 0 && c >= 0 && r < H && c < W && given[r * W + c] >= 0;
+    });
+    const pickLoose = (list) => {
+      const loose = list.filter((i) => !touchesGiven(i));
+      const from = loose.length ? loose : list;
+      const i = from[Math.floor(rnd() * from.length)];
+      list.splice(list.indexOf(i), 1);
+      return i;
+    };
 
     // Vorgaben hinzufügen, bis der Löser durchkommt: jeweils ein Gleisfeld, das
     // er noch nicht kennt.
@@ -365,15 +378,18 @@ export function generatePuzzle(W, H, rnd, { startSide, startPos = null, endSides
       // bei vielen offenen Feldern mehrere auf einmal (spart Zeit; Überflüssiges
       // wird unten wieder entfernt)
       for (let k = Math.max(1, Math.floor(open.length / 30)); k > 0 && open.length; k--) {
-        const i = open.splice(Math.floor(rnd() * open.length), 1)[0];
+        const i = pickLoose(open);
         given[i] = P.mask[i];
       }
       void m;
     }
     if (!ok) continue;
 
-    // Überflüssige Vorgaben wieder entfernen (macht es kniffliger)
-    for (const i of shuffle(P.cells.filter((k) => given[k] >= 0 && k !== P.start && k !== P.end), rnd)) {
+    // Überflüssige Vorgaben wieder entfernen (macht es kniffliger) – zuerst die,
+    // die an einer anderen Vorgabe hängen
+    const removable = shuffle(P.cells.filter((k) => given[k] >= 0 && k !== P.start && k !== P.end), rnd);
+    removable.sort((a, b) => touchesGiven(b) - touchesGiven(a));
+    for (const i of removable) {
       const keep = given[i];
       given[i] = -1;
       if (!logicSolve(puz).solved) given[i] = keep;
@@ -382,7 +398,7 @@ export function generatePuzzle(W, H, rnd, { startSide, startPos = null, endSides
     const free = P.cells.filter((i) => given[i] < 0);
     const extra = Math.round(free.length * extraGivens);
     for (let k = 0; k < extra; k++) {
-      const pick = free.splice(Math.floor(rnd() * free.length), 1)[0];
+      const pick = pickLoose(free);
       given[pick] = P.mask[pick];
     }
     const res = logicSolve(puz);

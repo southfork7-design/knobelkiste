@@ -216,6 +216,7 @@ button { font: inherit; color: inherit; }
 .tool-btn.tracks-no-hint { opacity: 0.4; cursor: default; }
 .tracks .field { fill: var(--surface); }
 .tracks .rock { fill: var(--rock); }
+.tracks .given-bg { fill: var(--ink); opacity: .12; }
 .tracks .stone { fill: var(--stone); }
 .tracks .grid-line { stroke: var(--ink); stroke-opacity: .12; stroke-width: .25; fill: none; }
 .tracks .grid-frame { stroke: var(--ink); stroke-opacity: .55; stroke-width: .6; fill: none; }
