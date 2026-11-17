@@ -118,7 +118,13 @@ export function mountPlush(root, { level, onWin, onExit }) {
   const bg = el('g');
   bg.appendChild(el('rect', { x: -1.5, y: -1.5, width: W + 3, height: H + 3, rx: 3, class: 'tray' }));
   for (let i = 0; i < L.cols * L.rows; i++) {
-    if (L.wall[i]) bg.appendChild(el('rect', { x: cx(i) - S / 2 - 0.2, y: cy(i) - S / 2 - 0.2, width: S + 0.4, height: S + 0.4, rx: 1.6, class: 'wall' }));
+    if (L.wall[i]) {
+      // Wand = Aussparung im Brett (am Rand bis über den Rahmen hinaus)
+      const x = i % L.cols, y = (i / L.cols) | 0, m = 1.8;
+      const x0 = x * S - (x === 0 ? m : 0.3), y0 = y * S - (y === 0 ? m : 0.3);
+      const x1 = (x + 1) * S + (x === L.cols - 1 ? m : 0.3), y1 = (y + 1) * S + (y === L.rows - 1 ? m : 0.3);
+      bg.appendChild(el('rect', { x: x0, y: y0, width: x1 - x0, height: y1 - y0, class: 'wall' }));
+    }
     else bg.appendChild(el('rect', { x: cx(i) - S / 2 + 0.5, y: cy(i) - S / 2 + 0.5, width: S - 1, height: S - 1, rx: 1.6, class: 'cell' }));
   }
   scene.appendChild(bg);

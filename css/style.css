@@ -429,7 +429,7 @@ button { font: inherit; color: inherit; }
 .tool-btn.plush-no-hint { opacity: 0.4; cursor: default; }
 .plush .tray { fill: var(--panel); stroke: var(--line); stroke-width: .4; }
 .plush .cell { fill: var(--ink); opacity: .05; }
-.plush .wall { fill: var(--pl-stone-edge); opacity: .55; }
+.plush .wall { fill: var(--bg); }
 .plush .pl-body { stroke: rgba(0,0,0,.35); stroke-width: .04; }
 .plush .pl-ear { fill: var(--pl-snout); opacity: .55; }
 .plush .pl-snout { fill: var(--pl-snout); }

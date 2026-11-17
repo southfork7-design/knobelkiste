@@ -1,5 +1,5 @@
 // Offline-Cache. Bei jeder Änderung an der App VERSION hochzählen.
-const VERSION = 'knobelkiste-v32';
+const VERSION = 'knobelkiste-v33';
 const FILES = [
   './', './index.html', './css/style.css', './manifest.webmanifest',
   './js/app.js', './js/rng.js',

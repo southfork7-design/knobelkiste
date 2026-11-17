@@ -10,23 +10,31 @@
 import { mulberry32, shuffle, randInt } from '../../rng.js';
 import { SHAPES, prep, cellsAt, initialState, occupancy, touches, reach, pathTo, applyMove, isWon } from './model.js';
 
-export const VERSION = 3;
+export const VERSION = 4;
 
+// Schwierigkeit: Die Hindernisse (graue Formen, Richtungsformen, Schlösser, Einbuchtungen,
+// Wandriegel) kommen nach und nach dazu und werden immer mehr. Ab Level 12 ist jedes 6. Level
+// eine Verschnaufpause: gleiche Feldgröße, aber Hindernisse wie bei etwa halb so hohem Level.
+export const isEasy = (level) => level >= 12 && level % 6 === 0;
 export function levelParams(level) {
   const t = Math.min(1, (level - 1) / 39);
   const cols = Math.round(8 + 8 * t);
   const rows = Math.round(cols * 1.6);
+  const d = isEasy(level) ? Math.max(1, Math.round(level * 0.45)) : level; // Stufe der Hindernisse
   return {
-    cols, rows,
+    cols, rows, easy: isEasy(level),
     colors: level < 16 ? 6 : level < 31 ? 7 : 8,   // mindestens 6 Farben (Wunsch), später 7 und 8
     maxSize: level < 3 ? 3 : level < 7 ? 4 : 5,
-    rooms: level < 3 ? 0 : Math.min(5, 1 + Math.floor((level - 3) / 6)),
-    greys: level < 6 ? 0 : Math.min(8, 1 + Math.floor((level - 6) / 4)),
-    axisFrac: level < 9 ? 0 : Math.min(0.3, 0.12 + (level - 9) * 0.006),
-    locks: level < 12 ? 0 : Math.min(5, 1 + Math.floor((level - 12) / 7)),
-    maxLock: level < 12 ? 0 : Math.min(5, 2 + Math.floor((level - 12) / 10)),
-    walls: level < 15 ? 0 : Math.min(12, 2 + Math.floor((level - 15) / 4)),
-    reloc: Math.min(0.75, 0.25 + level * 0.015),
+    rooms: d < 3 ? 0 : Math.min(5, 1 + Math.floor((d - 3) / 6)),
+    greys: d < 4 ? 0 : Math.min(14, 1 + Math.floor((d - 4) / 3)),
+    axisFrac: d < 6 ? 0 : Math.min(0.4, 0.12 + (d - 6) * 0.008),
+    locks: d < 9 ? 0 : Math.min(8, 1 + Math.floor((d - 9) / 5)),
+    maxLock: d < 9 ? 0 : Math.min(6, 2 + Math.floor((d - 9) / 8)),
+    // Brettform: Einbuchtungen vom Rand, Wandriegel und Pfeiler im Innern
+    notches: d < 8 ? 0 : Math.min(6, 1 + Math.floor((d - 8) / 6)),
+    bars: d < 12 ? 0 : Math.min(6, 1 + Math.floor((d - 12) / 6)),
+    pillars: d < 15 ? 0 : Math.min(8, 2 + Math.floor((d - 15) / 5)),
+    reloc: Math.min(0.85, 0.25 + d * 0.015),
     free: 0.14,
   };
 }
@@ -70,36 +78,52 @@ export function checkPlan(L) {
   return isWon(L, s);
 }
 
-function makeWalls(G, n, rnd) {
-  const { cols, rows } = G;
-  const wall = new Uint8Array(cols * rows);
-  // Ecken abschneiden
-  for (const [cx, cy] of [[0, 0], [cols - 1, 0], [0, rows - 1], [cols - 1, rows - 1]]) {
-    if (rnd() < 0.5) continue;
-    const w = randInt(rnd, 1, 2), h = randInt(rnd, 1, 2);
-    for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) {
-      wall[(cy === 0 ? dy : cy - dy) * cols + (cx === 0 ? dx : cx - dx)] = 1;
+// Brettform: Ecken abschneiden, Einbuchtungen vom Rand (2–4 breit, 2–3 tief), Wandriegel
+// (gerade, 2–4 lang) und einzelne Pfeiler. Das Brett bleibt zusammenhängend, höchstens ~18 % Wand.
+function makeWalls(G, prm, rnd) {
+  const { cols, rows } = G, N = cols * rows;
+  for (let attempt = 0; ; attempt++) {
+    const k = attempt < 20 ? 1 : 0.5;  // notfalls weniger
+    const wall = new Uint8Array(N);
+    const set = (x, y) => { if (x >= 0 && y >= 0 && x < cols && y < rows) wall[y * cols + x] = 1; };
+    if (prm.notches || prm.bars || prm.pillars) {
+      for (const [cx, cy] of [[0, 0], [cols - 1, 0], [0, rows - 1], [cols - 1, rows - 1]]) {
+        if (rnd() < 0.5) continue;
+        const w = randInt(rnd, 1, 2), h = randInt(rnd, 1, 2);
+        for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) set(cx === 0 ? dx : cx - dx, cy === 0 ? dy : cy - dy);
+      }
     }
-  }
-  // Pfeiler im Innern
-  for (let k = 0; k < n; k++) {
-    const x = randInt(rnd, 2, cols - 3), y = randInt(rnd, 2, rows - 3);
-    wall[y * cols + x] = 1;
-    if (rnd() < 0.4) wall[y * cols + x + (rnd() < 0.5 ? 1 : cols)] = 1;
-  }
-  // zusammenhängend?
-  const N = cols * rows;
-  const start = wall.findIndex((v) => !v);
-  const seen = new Uint8Array(N); seen[start] = 1;
-  const q = [start];
-  for (let i = 0; i < q.length; i++) {
-    const c = q[i], x = c % cols;
-    for (const n of [x > 0 ? c - 1 : -1, x < cols - 1 ? c + 1 : -1, c - cols, c + cols]) {
-      if (n >= 0 && n < N && !wall[n] && !seen[n]) { seen[n] = 1; q.push(n); }
+    for (let n = 0; n < Math.round(prm.notches * k); n++) {
+      const side = randInt(rnd, 0, 3), w = randInt(rnd, 2, 4), dep = randInt(rnd, 2, 3);
+      const len = side < 2 ? cols : rows;
+      const at = randInt(rnd, 2, Math.max(2, len - w - 2));
+      for (let i = 0; i < w; i++) for (let j = 0; j < dep; j++) {
+        if (side === 0) set(at + i, j);
+        else if (side === 1) set(at + i, rows - 1 - j);
+        else if (side === 2) set(j, at + i);
+        else set(cols - 1 - j, at + i);
+      }
     }
+    for (let n = 0; n < Math.round(prm.bars * k); n++) {
+      const len = randInt(rnd, 2, 4), hor = rnd() < 0.5;
+      const x = randInt(rnd, 2, cols - 3 - (hor ? len - 1 : 0)), y = randInt(rnd, 2, rows - 3 - (hor ? 0 : len - 1));
+      for (let i = 0; i < len; i++) set(x + (hor ? i : 0), y + (hor ? 0 : i));
+    }
+    for (let n = 0; n < Math.round(prm.pillars * k); n++) set(randInt(rnd, 1, cols - 2), randInt(rnd, 1, rows - 2));
+    // zusammenhängend und nicht zu viel Wand?
+    const free = wall.reduce((a, v) => a + (v ? 0 : 1), 0);
+    if (free < N * 0.82 && attempt < 40) continue;
+    const start = wall.findIndex((v) => !v);
+    const seen = new Uint8Array(N); seen[start] = 1;
+    const q = [start];
+    for (let i = 0; i < q.length; i++) {
+      const c = q[i], x = c % cols;
+      for (const nb of [x > 0 ? c - 1 : -1, x < cols - 1 ? c + 1 : -1, c - cols, c + cols]) {
+        if (nb >= 0 && nb < N && !wall[nb] && !seen[nb]) { seen[nb] = 1; q.push(nb); }
+      }
+    }
+    if (q.length === free) return wall;
   }
-  if (q.length !== wall.reduce((a, v) => a + (v ? 0 : 1), 0)) return makeWalls(G, n, rnd);
-  return wall;
 }
 
 function makeRooms(G, n, rnd) {
@@ -285,7 +309,7 @@ export function generateLevel(level) {
   for (let attempt = 0; ; attempt++) {
     const rnd = mulberry32(level * 7919 + attempt * 104729 + 13);
     const G = { cols: prm.cols, rows: prm.rows, colors: prm.colors, pieces: [], plan: [] };
-    G.wall = prm.walls ? makeWalls(G, prm.walls, rnd) : new Uint8Array(prm.cols * prm.rows);
+    G.wall = makeWalls(G, prm, rnd);
     G.plush = new Int8Array(prm.cols * prm.rows).fill(-1);
     G.rooms = makeRooms(G, prm.rooms, rnd);
     placeGreys(G, prm.greys, rnd);
