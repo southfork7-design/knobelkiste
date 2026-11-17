@@ -401,10 +401,6 @@ button { font: inherit; color: inherit; }
 }
 .traps-fit[hidden] { display: none; }
 .traps-view .toast { top: 6px; bottom: auto; z-index: 3; }
-.traps-hint { position: absolute; z-index: 2; pointer-events: none; box-sizing: border-box;
-  border: 3px solid var(--accent); border-radius: 4px; animation: pulse .9s ease-in-out infinite; }
-.traps-hint[hidden] { display: none; }
-.tool-btn.traps-no-hint { opacity: 0.4; cursor: default; }
 
 /* ---------- Kuschelfracht ---------- */
 .plush-wrap {

@@ -3,9 +3,9 @@
 // Doppeltippen auf eine Zahl mit genug Fahnen ringsum deckt den Rest auf.
 // Damit ein Doppeltippen nicht erst aufdeckt, wartet das Aufdecken kurz (DOUBLE_MS).
 // Zwei Finger: zoomen; ein Finger verschiebt, wenn hineingezoomt.
-// Herzen: aufgedeckte Falle und Tipp (nicht beim letzten). Falsche Fahnen kosten selbst
+// Herzen: nur eine aufgedeckte Falle kostet eines (kein Tipp). Falsche Fahnen kosten selbst
 // nichts – sie fallen erst auf, wenn man im Vertrauen auf sie eine Falle aufdeckt.
-import { generateLevel, makeGrid, logicSolve } from './generator.js';
+import { generateLevel, makeGrid } from './generator.js';
 import { createShell, timeText, mistakesText } from '../../ui/shell.js';
 import { sound } from '../../ui/sound.js';
 
@@ -24,29 +24,28 @@ export function mountTraps(root, { level, onWin, onExit }) {
   const g = makeGrid(W, H);
   const { N, nb } = g;
   const st = new Uint8Array(N);
-  let lives = LIVES, hints = 0, mistakes = 0, over = false;
+  let lives = LIVES, mistakes = 0, over = false;
   let t0 = performance.now();
 
   const shell = createShell(root, {
-    name: 'Fallenfeld', level, lives: LIVES, onHint: () => hint(),
+    name: 'Fallenfeld', level, lives: LIVES,
     onExit: (how) => { if (how === 'menu') saveState(); else clearSave(); onExit(how); },
   });
   const view = document.createElement('div');
   view.className = 'traps-view';
   const cv = document.createElement('canvas');
   cv.className = 'board traps';
-  const hintEl = document.createElement('div');
-  hintEl.className = 'traps-hint';
-  hintEl.hidden = true;
   const fitBtn = document.createElement('button');
   fitBtn.className = 'traps-fit';
   fitBtn.textContent = 'Ganzes Bild';
   fitBtn.hidden = true;
   const toast = document.createElement('div');
   toast.className = 'toast';
-  view.append(cv, hintEl, fitBtn, toast);
+  view.append(cv, fitBtn, toast);
   shell.board.appendChild(view);
+  // Fallenfeld hat keinen Tipp: Knopf unsichtbar, Platz bleibt (Zähler bleibt mittig)
   const hintBtn = root.querySelector('[data-act="hint"]');
+  if (hintBtn) { hintBtn.style.visibility = 'hidden'; hintBtn.disabled = true; }
   const ctx = cv.getContext('2d');
 
   let toastTimer = 0;
@@ -80,7 +79,6 @@ export function mountTraps(root, { level, onWin, onExit }) {
   }
 
   function afterChange({ booms = 0, quiet = false } = {}) {
-    clearHint();
     if (booms) {
       lives--; mistakes++;
       sound.bump();
@@ -256,7 +254,6 @@ export function mountTraps(root, { level, onWin, onExit }) {
           } else if (showAll && mines[i]) trapShape(x + s / 2, y + s / 2, s * 0.28, colors.trap);
         }
       }
-    placeHint();
   }
 
   // ---------- Zoomen und Verschieben ----------
@@ -330,50 +327,9 @@ export function mountTraps(root, { level, onWin, onExit }) {
   cv.addEventListener('pointerup', endPointer);
   cv.addEventListener('pointercancel', endPointer);
 
-  // ---------- Tipp ----------
-  // Zeigt ein Feld, das sich aus dem Sichtbaren sicher folgern lässt (oder eine falsche
-  // Markierung). Kostet ein Herz; mit dem letzten Herz gibt es keinen Tipp mehr.
-  let hinted = -1;
-  function clearHint() { hinted = -1; hintEl.hidden = true; }
-  function placeHint() {
-    if (hinted < 0) { hintEl.hidden = true; return; }
-    hintEl.hidden = false;
-    hintEl.style.left = ox + (hinted % W) * s + 'px';
-    hintEl.style.top = oy + Math.floor(hinted / W) * s + 'px';
-    hintEl.style.width = hintEl.style.height = s + 'px';
-  }
-  function showHint(i, text) {
-    hinted = i;
-    const r = Math.floor(i / W), c = i % W;
-    if (ox + c * s < 0 || ox + (c + 1) * s > cssW || oy + r * s < 0 || oy + (r + 1) * s > cssH) centerOn(i, s);
-    draw();
-    say(text);
-  }
-  function hint() {
-    if (over) return;
-    if (hinted >= 0) { showHint(hinted, hintEl.dataset.text); return; } // schon angezeigt – kostet nichts
-    if (lives <= 1) { sound.bump(); say('Kein Tipp beim letzten Herz'); return; }
-    let i = -1, text = '';
-    for (let x = 0; x < N; x++) if (st[x] === FLAG && !mines[x]) { i = x; text = 'Diese Markierung ist falsch'; break; }
-    if (i < 0) {
-      const known = new Int8Array(N);
-      for (let x = 0; x < N; x++) known[x] = st[x] === OPEN ? 0 : st[x] === BOOM ? 1 : -1;
-      const res = logicSolve(g, num, known, total, { reveal: false, record: true });
-      const step = res.steps.find((p) => st[p.i] === COVER) || res.steps.find((p) => p.mine && st[p.i] !== FLAG);
-      if (step) { i = step.i; text = step.mine ? 'Hier liegt eine Falle' : 'Dieses Feld ist frei'; }
-    }
-    if (i < 0) { say('Kein Tipp gefunden'); return; }
-    lives--; hints++;
-    updateHud();
-    hintEl.dataset.text = text;
-    showHint(i, text);
-    saveState();
-  }
-
   // ---------- Anzeige, Zeit, Ende ----------
   function updateHud() {
     shell.setLives(lives);
-    if (hintBtn) hintBtn.classList.toggle('traps-no-hint', lives <= 1);
     counter();
   }
   function counter() {
@@ -389,13 +345,11 @@ export function mountTraps(root, { level, onWin, onExit }) {
     over = true;
     clearSave();
     clearInterval(timer);
-    clearHint();
     for (let i = 0; i < N; i++) if (mines[i] && st[i] === COVER) st[i] = FLAG;
     shell.setCounter(`0 ✦ · ${timeText(performance.now() - t0).replace(' min', '')}`);
     view.classList.add('solved');
     draw();
     const details = [`${W}×${H}`, timeText(performance.now() - t0), mistakesText(mistakes)];
-    if (hints) details.push(`${hints} ${hints === 1 ? 'Tipp' : 'Tipps'}`);
     setTimeout(() => shell.win(details), 500);
     onWin && onWin(level);
   }
@@ -403,7 +357,6 @@ export function mountTraps(root, { level, onWin, onExit }) {
     over = true;
     clearSave();
     clearInterval(timer);
-    clearHint();
     draw();
     setTimeout(() => shell.lose(RULES), 500);
   }
@@ -414,7 +367,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
     if (over) return;
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        level, sig, st: Array.from(st).join(''), lives, hints, mistakes, time: performance.now() - t0,
+        level, sig, st: Array.from(st).join(''), lives, mistakes, time: performance.now() - t0,
       }));
     } catch {}
   }
@@ -424,7 +377,7 @@ export function mountTraps(root, { level, onWin, onExit }) {
     const sv = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (sv && sv.level === level && sv.sig === sig && sv.lives > 0 && sv.st.length === N) {
       for (let i = 0; i < N; i++) { const v = Number(sv.st[i]); st[i] = v <= BOOM ? v : COVER; } // alte Vermutungen → leer
-      lives = sv.lives; hints = sv.hints; mistakes = sv.mistakes;
+      lives = sv.lives; mistakes = sv.mistakes;
       t0 = performance.now() - sv.time;
       restored = true;
     }
