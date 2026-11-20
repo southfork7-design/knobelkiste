@@ -210,3 +210,69 @@ export function generateLevel(level) {
   }
   return { ...best.p, level };
 }
+
+// ---------- Großbild: 2×2 Teile, die einzeln gelöst werden ----------
+// Ein großes Muster wird in vier Teile geschnitten; jedes Teil ist für sich
+// ein Rätsel und muss für sich rein logisch lösbar sein. Das Muster ist nicht
+// gespiegelt (sonst wären Teile Spiegelbilder voneinander), dafür großflächiger:
+// grobe Flecken plus feine Unruhe, die über die Teilgrenzen hinweg laufen.
+export function bigParams(level) {
+  const t = level <= 2 ? 10 : level <= 6 ? 15 : 20;
+  return { tile: t, size: 2 * t };
+}
+
+function bigPattern(S, rnd) {
+  const g = 3 + Math.floor(rnd() * 2); // Größe der groben Flecken
+  const G = Math.ceil(S / g) + 1;
+  const coarse = Array.from({ length: G * G }, () => rnd() < 0.5);
+  let px = new Uint8Array(S * S);
+  for (let r = 0; r < S; r++)
+    for (let c = 0; c < S; c++) {
+      const on = coarse[Math.floor(r / g) * G + Math.floor(c / g)];
+      px[r * S + c] = rnd() < (on ? 0.78 : 0.24) ? 1 : 0;
+    }
+  const nx = new Uint8Array(S * S);
+  for (let r = 0; r < S; r++)
+    for (let c = 0; c < S; c++) {
+      let s = 0;
+      for (let dr = -1; dr <= 1; dr++)
+        for (let dc = -1; dc <= 1; dc++) {
+          const rr = r + dr, cc = c + dc;
+          if (rr >= 0 && cc >= 0 && rr < S && cc < S) s += px[rr * S + cc];
+        }
+      nx[r * S + c] = s >= 6 ? 1 : s <= 3 ? 0 : px[r * S + c];
+    }
+  px = nx;
+  return px;
+}
+
+const tileOf = (px, S, t, q) => {
+  const r0 = (q >> 1) * t, c0 = (q & 1) * t, out = new Uint8Array(t * t);
+  for (let r = 0; r < t; r++) for (let c = 0; c < t; c++) out[r * t + c] = px[(r0 + r) * S + c0 + c];
+  return out;
+};
+
+const BIG_CANDIDATES = 6;
+
+// Liefert { level, tile, size, parts: [Rätsel ×4] } (Teile: oben links, oben rechts, unten links, unten rechts)
+export function generateBigLevel(level) {
+  const { tile: t, size: S } = bigParams(level);
+  const rnd = mulberry32(level * 7331 + 97);
+  let best = null;
+  for (let n = 0; n < BIG_CANDIDATES || !best; n++) {
+    const px = bigPattern(S, rnd);
+    const parts = [];
+    let passes = 0;
+    for (let q = 0; q < 4; q++) {
+      const tp = tileOf(px, S, t, q);
+      const fill = tp.reduce((a, b) => a + b, 0) / (t * t);
+      if (fill < 0.35 || fill > 0.65) break;
+      const res = makeSolvable(t, t, tp, 0, rnd);
+      if (!res) break;
+      parts.push(res.p);
+      passes += res.passes;
+    }
+    if (parts.length === 4 && (!best || passes > best.passes)) best = { parts, passes };
+  }
+  return { level, tile: t, size: S, parts: best.parts };
+}

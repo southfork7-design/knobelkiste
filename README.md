@@ -11,6 +11,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Gleisbau – Einzelfeld (8×8 bis 18×24, teils mit Felsen) und Großstrecke (2/4/6 verbundene Felder à 12–16, am Ende Gesamtkarte) | spielbar |
 | Bilderrätsel (Nonogramm, 10×10 bis 30×40; anfangs eigene Motive, dann erzeugte Muster) | spielbar |
 | Farbbilder (Nonogramm mit 2–4 Farben, 15×15 bis 30×35) | spielbar |
+| Großbild (4 Bilderrätsel in 2×2, zusammen bis 40×40) | spielbar |
 | Schraubwerk (Schrauben umsetzen, 6×8 bis 12×17 Löcher; Teile pendeln, stoßen an Schrauben, rutschen ab oder fallen; Löser prüft jedes Level) | spielbar |
 | Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren; 7×9 bis 14×20, bis ~300 Figuren) | spielbar |
 | Fallenfeld (verdeckte Fallen finden, Zahlen zeigen die Nachbarn; 10×10 bis 50×50, ohne Raten lösbar) | spielbar |
@@ -29,6 +30,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `js/games/screws/model.js` – Spielregeln, Geometrie und Physik (Stifte, Pendeln, Fall-Simulation) von Schraubwerk, auch vom Löser genutzt; `worker.js` + `gen-client.js` erzeugen Level im Hintergrund (nächstes vorab, im Browser gespeichert)
 - `js/games/nonogram/motifs.js` – eigene Pixel-Motive (werden nur genutzt, wenn rein logisch lösbar)
 - `js/games/nonogram/color.js` – Farbbilder: Farb-Zeilenlöser und Generator (`node tools/test-nonogram-color.js`)
+- `js/games/nonogram/big.js` – Großbild: Übersicht der 4 Teile; Generator `generateBigLevel` in `generator.js` (`node tools/test-nonogram-big.js`)
 - `js/games/tracks/worker.js` + `gen-client.js` – Gleisbau-Rätsel werden im Hintergrund erzeugt (nächstes Feld/Level schon vorab, im Browser gespeichert); `generator.js` enthält den logischen Löser (ohne Raten)
 - `js/games/colors/model.js` – Regeln und Tipp-Löser von Farbräumer; `generator.js` baut Level entlang einer Lösung (`node tools/test-colors.js 80`), `worker.js` sucht Tipps im Hintergrund
 - `js/games/traps/generator.js` – Fallenfeld: logischer Löser (ohne Raten) und Generator, der Fallen verschiebt, bis der Löser durchkommt (`node tools/test-traps.js 60`); `game.js` zeichnet auf Canvas
@@ -53,6 +55,7 @@ Direkt-Links (lokal mit `python tools/serve.py 8123`):
 | Gleisbau – Großstrecke | `js/games/tracks/` | http://localhost:8123/?spiel=tracksRoute |
 | Bilderrätsel | `js/games/nonogram/` | http://localhost:8123/?spiel=nonogram |
 | Farbbilder | `js/games/nonogram/` (`color.js`) | http://localhost:8123/?spiel=nonogramColor |
+| Großbild | `js/games/nonogram/` (`big.js`) | http://localhost:8123/?spiel=nonogramBig |
 | Schraubwerk | `js/games/screws/` | http://localhost:8123/?spiel=screws |
 | Farbräumer | `js/games/colors/` | http://localhost:8123/?spiel=colors |
 | Fallenfeld | `js/games/traps/` | http://localhost:8123/?spiel=traps |

@@ -32,8 +32,10 @@ const el = (tag, attrs = {}) => {
 
 export const mountNonogramColor = (root, opts) => mountNonogram(root, { ...opts, color: true });
 
-export function mountNonogram(root, { level, onWin, onExit, color = false }) {
-  const P = color ? generateColorLevel(level) : generateLevel(level);
+// Großbild-Teil: puzzle, saveKey, name, label und onSolved kommen von big.js;
+// gelöst wird dann ohne Dialog onSolved({ time, mistakes, hints }) gerufen.
+export function mountNonogram(root, { level, onWin, onExit, color = false, puzzle = null, saveKey = null, name = null, label = null, onSolved = null }) {
+  const P = puzzle || (color ? generateColorLevel(level) : generateLevel(level));
   const { rows: R, cols: K, pixels } = P;
   const colors = P.colors || 1;
   const norm = (cl) => cl.map((v) => (typeof v === 'number' ? { n: v, c: 1 } : v));
@@ -46,7 +48,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
   let t0 = performance.now();
 
   const shell = createShell(root, {
-    name: color ? 'Farbbilder' : 'Bilderrätsel', level, lives: LIVES, onHint: () => hint(), onUndo: () => undo(),
+    name: name || (color ? 'Farbbilder' : 'Bilderrätsel'), level, label, lives: LIVES, onHint: () => hint(), onUndo: () => undo(),
     onExit: (how) => { if (how !== 'menu') clearSave(); onExit(how); },
   });
   const hintBtn = root.querySelector('[data-act="hint"]');
@@ -439,6 +441,11 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
     svg.classList.add('solved');
     view.classList.add('solved');
     tools.style.visibility = 'hidden';
+    if (onSolved) {
+      const res = { time: performance.now() - t0, mistakes, hints };
+      setTimeout(() => { if (svg.isConnected) onSolved(res); }, 700);
+      return;
+    }
     const details = [];
     if (P.name) details.push(P.name);
     details.push(timeText(performance.now() - t0), mistakesText(mistakes));
@@ -451,7 +458,11 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
     clearSave();
     clearInterval(timer);
     clearHint();
-    shell.lose(color ? RULES_COLOR : RULES);
+    if (onSolved) {
+      shell.showCard(`<h2>Keine Leben mehr</h2><p>${RULES}</p>
+        <button class="primary" data-act="restart">Teil nochmal</button>
+        <button class="secondary" data-act="back">Zur Übersicht</button>`);
+    } else shell.lose(color ? RULES_COLOR : RULES);
   }
 
   // Testzugang (nur mit ?debug in der Adresse)
@@ -464,7 +475,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false }) {
   }
 
   // ---------- Spielstand im Level ----------
-  const SAVE_KEY = `knobelkiste-${color ? 'nonogramColor' : 'nonogram'}-stand`;
+  const SAVE_KEY = saveKey || `knobelkiste-${color ? 'nonogramColor' : 'nonogram'}-stand`;
   const hex = (a) => Array.from(a, (v) => v.toString(16)).join('');
   const unhex = (t) => Uint8Array.from(t, (ch) => parseInt(ch, 16));
   function saveState() {

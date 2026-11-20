@@ -304,6 +304,20 @@ button { font: inherit; color: inherit; }
 .tool-switch.colored .sw-fill { width: 20px; height: 20px; border-radius: 4px; }
 .tool-switch.colored button.on { box-shadow: inset 0 -3px 0 var(--ink); }
 .sw-x { font-size: 14px; }
+/* Großbild: Übersicht mit 4 Teilen */
+.board-wrap.nono-big-wrap { flex-direction: column; gap: 12px; }
+.nono-big { display: block; width: 100%; max-width: 520px; max-height: calc(100% - 50px); aspect-ratio: 1; }
+.nono-big .part.open { cursor: pointer; }
+.nono-big .part-bg { fill: var(--surface); transition: fill .2s; }
+.nono-big .part.open:hover .part-bg { fill: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.nono-big .part.done .part-bg { fill: var(--surface); }
+.nono-big .part-fill { fill: var(--ink); shape-rendering: crispEdges; }
+.nono-big .part.open .part-fill { opacity: .3; }
+.nono-big .part-label { font-size: 60px; font-weight: 650; fill: var(--accent); text-anchor: middle; dominant-baseline: central; opacity: .8; }
+.nono-big .part-cut { stroke: var(--accent); stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-dasharray: 5 4; fill: none; }
+.nono-big .part-frame { fill: none; stroke: var(--ink); stroke-opacity: .7; stroke-width: 1.2px; vector-effect: non-scaling-stroke; }
+.nono-big.solved .part-fill { fill: var(--accent); transition: fill .4s; }
+.nono-big-note { margin: 0; color: var(--muted); font-size: 14px; text-align: center; max-width: 340px; }
 
 /* ---------- Schraubwerk ---------- */
 .screws-view { position: relative; width: 100%; height: 100%; overflow: hidden; isolation: isolate; }

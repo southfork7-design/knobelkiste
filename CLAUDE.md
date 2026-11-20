@@ -35,7 +35,7 @@ Jedes Spiel wird in einer eigenen Sitzung überarbeitet. In so einer Sitzung:
 | Pfeilwürfel | arrows3d | js/games/arrows3d |
 | Kronenfeld | crowns | js/games/crowns |
 | Gleisbau (Einzelfeld / Großstrecke) | tracks / tracksRoute | js/games/tracks |
-| Bilderrätsel / Farbbilder | nonogram / nonogramColor | js/games/nonogram |
+| Bilderrätsel / Farbbilder / Großbild | nonogram / nonogramColor / nonogramBig | js/games/nonogram |
 | Schraubwerk | screws | js/games/screws |
 | Farbräumer | colors | js/games/colors |
 | Fallenfeld | traps | js/games/traps |
