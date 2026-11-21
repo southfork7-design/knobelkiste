@@ -21,6 +21,12 @@ Kommunikation mit der Nutzerin bzw. dem Nutzer auf Deutsch.
 - `sw.js` Offline-Cache: bei jeder Änderung `VERSION` hochzählen und neue Dateien in `FILES` eintragen
 - `tools/test-*.js` Generator-Tests (`node tools/test-<spiel>.js`)
 
+## Veröffentlichen
+- Online über GitHub Pages: https://southfork7-design.github.io/knobelkiste/ (öffentliches Repository).
+- Nach fertigen Änderungen: committen und `git push origin main` (vorher `VERSION` in `sw.js` hochzählen).
+- Commits nur mit der privaten Adresse aus `git config user.email`; den lokalen Zweig `backup-vor-mailwechsel` nie pushen.
+- Auf dem Handy wird Brave benutzt (nicht Chrome).
+
 ## Feinschliff pro Spiel
 Jedes Spiel wird in einer eigenen Sitzung überarbeitet. In so einer Sitzung:
 - nur Dateien in `js/games/<spiel>/` und den Abschnitt des Spiels in `css/style.css` ändern;

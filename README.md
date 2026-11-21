@@ -73,6 +73,7 @@ Feinschliff je Spiel: nur im eigenen Ordner arbeiten; Änderungen an `js/ui/`, `
 damit der Browser (auch auf dem Handy im selben WLAN) nach Änderungen keine alte Fassung zeigt.
 
 ## Aufs Android-Handy
-Die App muss über HTTPS erreichbar sein (geplant: GitHub Pages).
+Online (GitHub Pages): https://southfork7-design.github.io/knobelkiste/
+Neue Fassung veröffentlichen: committen, `VERSION` in `sw.js` hochzählen, `git push origin main` – nach 1–2 Minuten ist sie online.
 Auf dem Handy wird Brave benutzt: Seite in Brave öffnen → Menü ⋮ → „App installieren“ / „Zum Startbildschirm hinzufügen“.
 Brave-Shields stören die App nicht (keine Werbung, keine Tracker, keine fremden Server).
