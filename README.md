@@ -15,6 +15,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 | Schraubwerk (Schrauben umsetzen, 6×8 bis 12×17 Löcher; Teile pendeln, stoßen an Schrauben, rutschen ab oder fallen; Löser prüft jedes Level) | spielbar |
 | Farbräumer (Figuren in Farb-Behälter räumen, Ablage, Tore mit nachrückenden Figuren; 7×9 bis 14×20, bis ~300 Figuren) | spielbar |
 | Fallenfeld (verdeckte Fallen finden, Zahlen zeigen die Nachbarn; 10×10 bis 50×50, ohne Raten lösbar) | spielbar |
+| Farbschloss (versteckten Farbcode erraten; 4 Stellen mit 10 bzw. 6 Stellen mit 12 Versuchen, 6–8 Farben, später mit doppelten Farben) | spielbar |
 | Kuschelfracht (Formen über gleichfarbige Plüschtiere schieben, die Tiere fallen hinein; Räume, Hindernisse, Richtungsformen, Schlösser; 8×13 bis 16×26) | spielbar |
 
 ## Grundsätze (für alle Spiele)
@@ -35,6 +36,7 @@ Logikrätsel-App fürs Handy (PWA): offline, ohne Werbung, unendlich viele gener
 - `js/games/colors/model.js` – Regeln und Tipp-Löser von Farbräumer; `generator.js` baut Level entlang einer Lösung (`node tools/test-colors.js 80`), `worker.js` sucht Tipps im Hintergrund
 - `js/games/traps/generator.js` – Fallenfeld: logischer Löser (ohne Raten) und Generator, der Fallen verschiebt, bis der Löser durchkommt (`node tools/test-traps.js 60`); `game.js` zeichnet auf Canvas
 - `js/games/plush/model.js` – Kuschelfracht: Regeln, sichere Sackgassen-Prüfung und Tipp-Löser; `generator.js` baut Level rückwärts entlang einer Lösung (`node tools/test-plush.js 60`), `worker.js` sucht Tipps im Hintergrund
+- `js/games/codes/generator.js` – Farbschloss: Bewertung, Stufen und Kandidatensuche (auch für den Tipp); der Test prüft, dass jede Stufe in ihrer Zeilenzahl lösbar ist (`node tools/test-codes.js`)
 - `sw.js` – Offline-Cache (bei Änderungen `VERSION` hochzählen)
 - `tools/test-*.js` – prüfen Level auf Lösbarkeit bzw. Eindeutigkeit (`node tools/test-crowns.js` usw.)
 - `tools/make-icons.js` – erzeugt die PNG-Symbole
@@ -58,6 +60,8 @@ Direkt-Links (lokal mit `python tools/serve.py 8123`):
 | Großbild | `js/games/nonogram/` (`big.js`) | http://localhost:8123/?spiel=nonogramBig |
 | Schraubwerk | `js/games/screws/` | http://localhost:8123/?spiel=screws |
 | Farbräumer | `js/games/colors/` | http://localhost:8123/?spiel=colors |
+| Farbschloss – 4 Stellen | `js/games/codes/` | http://localhost:8123/?spiel=codes4 |
+| Farbschloss – 6 Stellen | `js/games/codes/` | http://localhost:8123/?spiel=codes6 |
 | Fallenfeld | `js/games/traps/` | http://localhost:8123/?spiel=traps |
 | Kuschelfracht | `js/games/plush/` | http://localhost:8123/?spiel=plush |
 

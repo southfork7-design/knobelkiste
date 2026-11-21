@@ -40,3 +40,4 @@ Jedes Spiel wird in einer eigenen Sitzung überarbeitet. In so einer Sitzung:
 | Farbräumer | colors | js/games/colors |
 | Fallenfeld | traps | js/games/traps |
 | Kuschelfracht | plush | js/games/plush |
+| Farbschloss (4 / 6 Stellen) | codes4 / codes6 | js/games/codes |
