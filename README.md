@@ -70,8 +70,9 @@ Feinschliff je Spiel: nur im eigenen Ordner arbeiten; Änderungen an `js/ui/`, `
 
 ## Lokal starten
 `python tools/serve.py 8123`, dann http://localhost:8123 öffnen. Der Server sendet `Cache-Control: no-cache`,
-damit Chrome (auch auf dem Handy im selben WLAN) nach Änderungen keine alte Fassung zeigt.
+damit der Browser (auch auf dem Handy im selben WLAN) nach Änderungen keine alte Fassung zeigt.
 
 ## Aufs Android-Handy
-Die App muss über HTTPS erreichbar sein (z. B. GitHub Pages oder Netlify).
-In Chrome öffnen → Menü ⋮ → „App installieren“ / „Zum Startbildschirm hinzufügen“.
+Die App muss über HTTPS erreichbar sein (geplant: GitHub Pages).
+Auf dem Handy wird Brave benutzt: Seite in Brave öffnen → Menü ⋮ → „App installieren“ / „Zum Startbildschirm hinzufügen“.
+Brave-Shields stören die App nicht (keine Werbung, keine Tracker, keine fremden Server).
