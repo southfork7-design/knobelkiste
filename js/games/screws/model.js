@@ -204,11 +204,14 @@ function fall(plate, pose, pegs, bottom, rec) {
 }
 
 // Ergebnisse merken (gleiche Lage + gleiche Stifte → gleiches Ergebnis)
-const memo = new Map();
+const memos = new WeakMap();
 function cached(kind, plate, pose, pegs, extra, fn) {
-  const key = `${kind}${plate.id}|${pose.θ},${pose.tx},${pose.ty}|${extra}|${pegs.map((q) => q[0] + ',' + q[1]).join(';')}`;
+  // je Teil-Objekt getrennt: gleiche Nummern in verschiedenen Leveln sind verschiedene Teile
+  let memo = memos.get(plate);
+  if (!memo) memos.set(plate, (memo = new Map()));
+  const key = `${kind}|${pose.θ},${pose.tx},${pose.ty}|${extra}|${pegs.map((q) => q[0] + ',' + q[1]).join(';')}`;
   if (memo.has(key)) return memo.get(key);
-  if (memo.size > 50000) memo.clear();
+  if (memo.size > 2000) memo.clear();
   const r = fn();
   memo.set(key, r);
   return r;

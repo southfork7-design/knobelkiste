@@ -1,6 +1,6 @@
 // Schraubwerk – Level-Generator. Jedes Level wird mit dem Löser geprüft.
 import { mulberry32, randInt, shuffle } from '../../rng.js';
-export const VERSION = 5; // bei Änderungen am Generator hochzählen (gespeicherte Level verwerfen)
+export const VERSION = 6; // bei Änderungen am Generator hochzählen (gespeicherte Level verwerfen)
 
 import { covers, hasHoleAt, initialState, solve, legalMoves, screwBlocked, applyMove } from './model.js';
 

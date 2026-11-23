@@ -10,6 +10,7 @@
 // „Neu“, „Nochmal“, Lösen und das nächste Level verwerfen ihn.
 import { initialState, legalMoves, applyMove, screwBlocked, targetFree, isWon, toWorld } from './model.js';
 import { getLevel, getHint } from './gen-client.js';
+import { VERSION } from './generator.js';
 import { createShell, timeText, mistakesText } from '../../ui/shell.js';
 import { sound } from '../../ui/sound.js';
 
@@ -277,13 +278,19 @@ function play(root, L, { level, onWin, onExit }) {
   }
 
   // ---------- Animation (zusammen höchstens etwa 0,5 s) ----------
+  // Endet immer: Der Bild-Zeitstempel kann vor t0 liegen (daher t ≥ 0), ein Fehler
+  // im Bild beendet nur diese Animation, und ein Wecker greift, falls keine Bilder kommen.
   function animate(ms, tick) {
-    return new Promise((done) => {
+    return new Promise((resolve) => {
       const t0 = performance.now();
+      let ended = false;
+      const done = () => { if (!ended) { ended = true; clearTimeout(alarm); resolve(); } };
+      const alarm = setTimeout(done, ms + 400);
       const step = (now) => {
+        if (ended) return;
         if (!svg.isConnected) return done();
-        const t = Math.min(1, (now - t0) / ms);
-        tick(t);
+        const t = Math.max(0, Math.min(1, (now - t0) / ms));
+        try { tick(t); } catch { return done(); }
         if (t < 1) requestAnimationFrame(step); else done();
       };
       requestAnimationFrame(step);
@@ -327,10 +334,10 @@ function play(root, L, { level, onWin, onExit }) {
   }
 
   async function doMove(m) {
-    busy = true;
     const prev = s;
     const rec = new Map();
     const next = applyMove(L, s, m, rec);
+    busy = true;
     history.push(prev);
     selected = -1;
     clearHint();
@@ -442,7 +449,7 @@ function play(root, L, { level, onWin, onExit }) {
   }
 
   // ---------- Spielstand im Level ----------
-  const sig = `${L.cols}x${L.rows}:${L.plates.length}:${L.holes.length}:${L.screws.length}`;
+  const sig = `v${VERSION}:${L.cols}x${L.rows}:${L.plates.length}:${L.holes.length}:${L.screws.length}`;
   function saveState() {
     if (over) return;
     try {

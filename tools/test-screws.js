@@ -8,14 +8,15 @@ let bad = 0;
 const t0 = Date.now();
 for (let lvl = 1; lvl <= upTo; lvl++) {
   const t = Date.now();
-  const L = generateLevel(lvl);
+  // Kopie und rec: rechnet wie das Spiel selbst, ohne Zwischenspeicher des Generators
+  const L = JSON.parse(JSON.stringify(generateLevel(lvl)));
   if (!L.solution) { bad++; console.log(`Level ${lvl}: KEIN Level gefunden`); continue; }
   let s = initialState(L);
   const covered = s.screws.filter((_, i) => screwBlocked(L, s, i)).length;
   let ok = true;
   for (const m of L.solution) {
     if (!legalMoves(L, s).some(([i, h]) => i === m[0] && h === m[1])) { ok = false; break; }
-    s = applyMove(L, s, m);
+    s = applyMove(L, s, m, new Map());
   }
   ok = ok && isWon(s);
   if (!ok) bad++;
