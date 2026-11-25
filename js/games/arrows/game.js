@@ -89,7 +89,7 @@ export function mountArrows(root, { level, onWin, onExit }) {
   views.forEach((v) => { v.pathLen = v.body.getTotalLength(); place(v, 0); });
 
   // ---- Zoomen und Verschieben ----
-  // Zwei Finger: zoomen; ein Finger ziehen: verschieben (wenn hineingezoomt);
+  // Zwei Finger: zoomen; ein Finger ziehen: verschieben (auch ohne Zoom);
   // Mausrad am Computer. Ein Tippen zählt nur, wenn der Finger kaum bewegt wurde.
   const vb = { ...full };
   let zoom = 1;
@@ -108,11 +108,23 @@ export function mountArrows(root, { level, onWin, onExit }) {
     const k = f.k0 * zoom;
     vb.w = f.rw / k; vb.h = f.rh / k;
   }
+  const homeX = () => full.x + (full.w - vb.w) / 2;
+  const homeY = () => full.y + (full.h - vb.h) / 2;
+  // Der Ausschnitt darf weit über das Feld hinaus: Jede Stelle, auch Rand und Ecken,
+  // lässt sich bis in die Mitte der Spielfläche ziehen.
   function clampVB() {
-    vb.x = vb.w >= full.w ? full.x + (full.w - vb.w) / 2 : Math.min(Math.max(vb.x, full.x), full.x + full.w - vb.w);
-    vb.y = vb.h >= full.h ? full.y + (full.h - vb.h) / 2 : Math.min(Math.max(vb.y, full.y), full.y + full.h - vb.h);
+    vb.x = Math.min(Math.max(vb.x, full.x - vb.w / 2), full.x + full.w - vb.w / 2);
+    vb.y = Math.min(Math.max(vb.y, full.y - vb.h / 2), full.y + full.h - vb.h / 2);
     setVB();
-    fitBtn.hidden = zoom < 1.05;
+    const k = frame().k0 * zoom;
+    fitBtn.hidden = zoom < 1.05 && Math.hypot(vb.x - homeX(), vb.y - homeY()) * k < 4;
+  }
+  // zurück zum ganzen Feld in der Mitte
+  function fit() {
+    zoom = 1;
+    sizeVB(frame());
+    vb.x = homeX(); vb.y = homeY();
+    clampVB();
   }
   function applyZoom(z, px, py, ux, uy) {
     // (ux, uy) in SVG-Einheiten soll unter dem Bildschirmpunkt (px, py) liegen
@@ -155,17 +167,25 @@ export function mountArrows(root, { level, onWin, onExit }) {
       applyZoom(z0 * d / d0, (a.x + b.x) / 2, (a.y + b.y) / 2, u[0], u[1]);
     } else if (pointers.size === 1 && gesture.start) {
       const dx = e.clientX - gesture.start.x, dy = e.clientY - gesture.start.y;
-      if (!gesture.moved && Math.hypot(dx, dy) > 8) gesture.moved = true;
-      if (gesture.moved && zoom > 1) {
+      const len = Math.hypot(dx, dy);
+      if (!gesture.moved && len > 8) {
+        gesture.moved = true;
+        // erst ab der Schwelle ziehen, damit das Feld nicht springt
+        gesture.start.x += dx / len * 8;
+        gesture.start.y += dy / len * 8;
+      }
+      if (gesture.moved) {
         const k = frame().k0 * zoom;
-        vb.x = gesture.start.vx - dx / k;
-        vb.y = gesture.start.vy - dy / k;
+        vb.x = gesture.start.vx - (e.clientX - gesture.start.x) / k;
+        vb.y = gesture.start.vy - (e.clientY - gesture.start.y) / k;
         clampVB();
       }
     }
   });
   const endPointer = (e) => {
-    pointers.delete(e.pointerId);
+    if (!pointers.delete(e.pointerId)) return;
+    // ganz herausgezoomt: Feld wieder mittig zeigen
+    if (gesture.pinch && gesture.pinch.z0 > 1.05 && zoom < 1.05) fit();
     gesture.pinch = null;
     if (pointers.size === 1) {
       // nach dem Zoomen mit dem verbleibenden Finger weiter verschieben
@@ -178,12 +198,12 @@ export function mountArrows(root, { level, onWin, onExit }) {
   svg.addEventListener('wheel', (e) => {
     e.preventDefault();
     const u = toUnits(e.clientX, e.clientY);
-    applyZoom(zoom * Math.exp(-e.deltaY * 0.0015), e.clientX, e.clientY, u[0], u[1]);
+    const z = zoom * Math.exp(-e.deltaY * 0.0015);
+    if (z <= 1) fit(); else applyZoom(z, e.clientX, e.clientY, u[0], u[1]);
   }, { passive: false });
-  fitBtn.addEventListener('click', () => { zoom = 1; sizeVB(frame()); clampVB(); });
+  fitBtn.addEventListener('click', fit);
   // Bildausschnitt so verschieben, dass ein Pfeil sichtbar ist
   function reveal(v) {
-    if (zoom <= 1) return;
     const xs = v.a.cells.map(([x]) => x * C + C / 2), ys = v.a.cells.map(([, y]) => y * C + C / 2);
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
     if (x0 >= vb.x && x1 <= vb.x + vb.w && y0 >= vb.y && y1 <= vb.y + vb.h) return;
@@ -191,10 +211,16 @@ export function mountArrows(root, { level, onWin, onExit }) {
     vb.y = (y0 + y1) / 2 - vb.h / 2;
     clampVB();
   }
-  sizeVB(frame());
-  clampVB();
-  // Bei Größenänderung (Drehen des Handys) Ausschnitt anpassen
-  new ResizeObserver(() => { if (svg.isConnected) { sizeVB(frame()); clampVB(); } }).observe(svg);
+  fit();
+  // Bei Größenänderung (Drehen des Handys) Ausschnitt anpassen, Bildmitte beibehalten
+  new ResizeObserver(() => {
+    if (!svg.isConnected) return;
+    if (fitBtn.hidden) { fit(); return; }
+    const cx = vb.x + vb.w / 2, cy = vb.y + vb.h / 2;
+    sizeVB(frame());
+    vb.x = cx - vb.w / 2; vb.y = cy - vb.h / 2;
+    clampVB();
+  }).observe(svg);
 
   // Pfeil an Position s (Strecke entlang des Pfads) zeichnen
   function place(v, s) {
