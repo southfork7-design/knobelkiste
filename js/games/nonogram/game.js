@@ -7,6 +7,8 @@
 // stellt zurück. Die Zahlen bleiben beim Zoomen am Rand stehen.
 // 3 Herzen: Eine Zeile/Spalte, die sichtbar nicht mehr zu ihren Zahlen passen
 // kann, kostet ein Herz; ebenso jeder Tipp (nicht mit dem letzten Herz).
+// Kreuze sind nur Notizen: Sie kosten nie ein Herz und zählen bei dieser Prüfung
+// nicht mit (geprüft werden nur Füllungen und die Lücken fertiger Zeilen/Spalten).
 // Ist eine Zeile/Spalte fertig, bekommen ihre übrigen Felder von selbst ein Kreuz.
 // Der Stand im laufenden Level wird im Browser gespeichert (Neuladen, Menü);
 // „Neu“, „Nochmal“, Lösen und das nächste Level verwerfen ihn.
@@ -44,6 +46,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false, puzzl
   const FULL = (1 << (colors + 1)) - 1;
   const st = new Uint8Array(N);
   const undoStack = [];
+  let drag = null; // laufendes Tippen/Wischen
   let lives = LIVES, hints = 0, mistakes = 0, over = false, tool = 1;
   let t0 = performance.now();
 
@@ -128,23 +131,21 @@ export function mountNonogram(root, { level, onWin, onExit, color = false, puzzl
   const mask = (v) => (v === EMPTY ? FULL : v === CROSS ? 1 : 1 << v);
   const colorOf = (v) => (v === CROSS ? 0 : v);
   const single = (m) => m && (m & (m - 1)) === 0;
-  // Zeile passt nicht mehr zu den Zahlen (mit Füllungen und Kreuzen nicht lösbar)
-  const broken = (line, cl) => solveLineColor(line.map(mask), cl) === null;
-  function lineState() {
-    const rowBad = [], colBad = [], rowDone = [], colDone = [];
-    let bad = 0;
-    for (let r = 0; r < R; r++) {
-      const line = rowOf(r);
-      rowBad[r] = broken(line, rowClues[r]);
-      rowDone[r] = same(colorCluesOf(line.map(colorOf)), rowClues[r]);
-      bad += rowBad[r];
-    }
-    for (let c = 0; c < K; c++) {
-      const line = colOf(c);
-      colBad[c] = broken(line, colClues[c]);
-      colDone[c] = same(colorCluesOf(line.map(colorOf)), colClues[c]);
-      bad += colBad[c];
-    }
+  // Zeilen/Spalten, deren Füllungen schon genau den Zahlen entsprechen
+  const doneRows = (a) => rowClues.map((cl, r) => same(colorCluesOf(Array.from({ length: K }, (_, c) => colorOf(a[r * K + c]))), cl));
+  const doneCols = (a) => colClues.map((cl, c) => same(colorCluesOf(Array.from({ length: R }, (_, r) => colorOf(a[r * K + c]))), cl));
+  // Passt eine Zeile/Spalte nicht mehr zu ihren Zahlen? Kreuze zählen dabei nicht;
+  // leer ist nur sicher, was in einer fertigen Zeile/Spalte liegt (Stand base).
+  function lineState(base = st) {
+    const rowDone = doneRows(st), colDone = doneCols(st);
+    const rowFix = base === st ? rowDone : doneRows(base), colFix = base === st ? colDone : doneCols(base);
+    const known = (r, c) => {
+      const v = colorOf(st[r * K + c]);
+      return v ? 1 << v : rowFix[r] || colFix[c] ? 1 : FULL;
+    };
+    const rowBad = rowClues.map((cl, r) => solveLineColor(Array.from({ length: K }, (_, c) => known(r, c)), cl) === null);
+    const colBad = colClues.map((cl, c) => solveLineColor(Array.from({ length: R }, (_, r) => known(r, c)), cl) === null);
+    const bad = rowBad.filter(Boolean).length + colBad.filter(Boolean).length;
     return { rowBad, colBad, rowDone, colDone, bad };
   }
 
@@ -158,7 +159,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false, puzzl
     }
     fills.forEach((f, k) => f.setAttribute('d', df[k + 1]));
     crosses.setAttribute('d', dx);
-    const s = lineState();
+    const s = lineState(drag ? drag.orig : st);
     rowSpan.forEach((sp, r) => { sp.classList.toggle('done', s.rowDone[r] && !s.rowBad[r]); sp.classList.toggle('bad', s.rowBad[r]); });
     colSpan.forEach((sp, c) => { sp.classList.toggle('done', s.colDone[c] && !s.colBad[c]); sp.classList.toggle('bad', s.colBad[c]); });
     return s;
@@ -264,7 +265,7 @@ export function mountNonogram(root, { level, onWin, onExit, color = false, puzzl
   const apply = (d, o) => (d.action === 'set' ? (o === EMPTY ? d.v : o) : (o === d.v ? EMPTY : o));
 
   const pointers = new Map();
-  let pinch = null, multi = false, drag = null;
+  let pinch = null, multi = false;
   function startPinch() {
     const [a, b] = [...pointers.values()];
     const [mx, my] = local((a.x + b.x) / 2, (a.y + b.y) / 2);
@@ -335,10 +336,10 @@ export function mountNonogram(root, { level, onWin, onExit, color = false, puzzl
     drag = null;
     hl.setAttribute('d', '');
     const changed = d.orig.some((v, i) => v !== st[i]);
-    const ls = render();
+    render();
     if (!changed) return;
     undoStack.push(d.orig); // die Auto-Kreuze gehören zum selben Schritt
-    const hurt = ls.bad > d.bad0;
+    const hurt = d.action === 'set' && d.v !== CROSS && lineState(d.orig).bad > d.bad0;
     autoCross();
     render();
     if (hurt) {
